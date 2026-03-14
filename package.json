@@ -1,0 +1,38 @@
+{
+  "name": "react-example",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "tsx server.ts",
+    "dev:client": "vite",
+    "build": "tsc && vite build",
+    "lint": "tsc --noEmit",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "lucide-react": "^0.446.0",
+    "mongoose": "^9.2.3",
+    "motion": "^11.11.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.3.3",
+    "@types/react": "^18.3.10",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.2",
+    "concurrently": "^9.2.1",
+    "tailwindcss": "^4.0.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.6.2",
+    "vite": "^5.4.8"
+  }
+}
