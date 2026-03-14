@@ -80,8 +80,51 @@ const orderSchema = new mongoose.Schema({
   completed: { type: Boolean, default: false },
 });
 
+const customerOrderSchema = new mongoose.Schema({
+  customerName: { type: String, required: true },
+  customerPhone: { type: String },
+  customerAddress: { type: String },
+  orderDate: { type: String, required: true },
+  products: [{
+    name: { type: String, required: true },
+    price: { type: Number, required: true, min: 0 },
+    qty: { type: Number, required: true, min: 1 },
+  }],
+  shippingCharge: { type: Number, default: 0 },
+  totalAmount: { type: Number, required: true },
+  status: { type: String, default: 'Pending' },
+});
+
+const walletTransactionSchema = new mongoose.Schema({
+  date: { type: String, required: true },
+  aggregator: { type: String, required: true }, // e.g. "Shiprocket", "Shipmozo"
+  type: { type: String, enum: ['add_funds', 'deduct_shipping'], required: true },
+  amount: { type: Number, required: true, min: 0 },
+  referenceId: { type: String }, // Optional Tracking ID/Transaction ID
+});
+
+const inventoryItemSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  category: { type: String, required: true }, // e.g. "Yarn", "Stuffing", "Packaging"
+  quantity: { type: Number, required: true, min: 0 },
+  unit: { type: String, required: true }, // e.g. "skeins", "grams", "boxes"
+  costPerUnit: { type: Number, default: 0 },
+  lowStockThreshold: { type: Number, default: 0 }
+});
+
+const expenseSchema = new mongoose.Schema({
+  date: { type: String, required: true },
+  category: { type: String, required: true }, // e.g., "Marketing", "Software", "Packaging"
+  amount: { type: Number, required: true, min: 0 },
+  description: { type: String, required: true }
+});
+
 const Crafter = mongoose.models.Crafter || mongoose.model('Crafter', crafterSchema);
 const Order = mongoose.models.Order || mongoose.model('Order', orderSchema);
+const CustomerOrder = mongoose.models.CustomerOrder || mongoose.model('CustomerOrder', customerOrderSchema);
+const WalletTransaction = mongoose.models.WalletTransaction || mongoose.model('WalletTransaction', walletTransactionSchema);
+const InventoryItem = mongoose.models.InventoryItem || mongoose.model('InventoryItem', inventoryItemSchema);
+const Expense = mongoose.models.Expense || mongoose.model('Expense', expenseSchema);
 
 // API Routes
 app.get('/api/health', (req, res) => {
@@ -167,6 +210,164 @@ app.delete('/api/orders/:id', async (req, res) => {
   try {
     await connectDB();
     await Order.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Customer Orders API
+app.get('/api/customer-orders', async (req, res) => {
+  try {
+    await connectDB();
+    const orders = await CustomerOrder.find().sort({ orderDate: -1 });
+    res.json(orders);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/customer-orders', async (req, res) => {
+  try {
+    await connectDB();
+    const order = new CustomerOrder(req.body);
+    await order.save();
+    res.json(order);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/customer-orders/:id', async (req, res) => {
+  try {
+    await connectDB();
+    const order = await CustomerOrder.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(order);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/customer-orders/:id', async (req, res) => {
+  try {
+    await connectDB();
+    await CustomerOrder.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Wallet Transactions API
+app.get('/api/wallet/transactions', async (req, res) => {
+  try {
+    await connectDB();
+    const transactions = await WalletTransaction.find().sort({ date: -1 });
+    res.json(transactions);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/wallet/transactions', async (req, res) => {
+  try {
+    await connectDB();
+    const transaction = new WalletTransaction(req.body);
+    await transaction.save();
+    res.json(transaction);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/wallet/transactions/:id', async (req, res) => {
+  try {
+    await connectDB();
+    await WalletTransaction.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Inventory API
+app.get('/api/inventory', async (req, res) => {
+  try {
+    await connectDB();
+    const items = await InventoryItem.find().sort({ category: 1, name: 1 });
+    res.json(items);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/inventory', async (req, res) => {
+  try {
+    await connectDB();
+    const item = new InventoryItem(req.body);
+    await item.save();
+    res.json(item);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/inventory/:id', async (req, res) => {
+  try {
+    await connectDB();
+    const item = await InventoryItem.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(item);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/inventory/:id', async (req, res) => {
+  try {
+    await connectDB();
+    await InventoryItem.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Expenses API
+app.get('/api/expenses', async (req, res) => {
+  try {
+    await connectDB();
+    const expenses = await Expense.find().sort({ date: -1 });
+    res.json(expenses);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/expenses', async (req, res) => {
+  try {
+    await connectDB();
+    const expense = new Expense(req.body);
+    await expense.save();
+    res.json(expense);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/expenses/:id', async (req, res) => {
+  try {
+    await connectDB();
+    const expense = await Expense.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(expense);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/expenses/:id', async (req, res) => {
+  try {
+    await connectDB();
+    await Expense.findByIdAndDelete(req.params.id);
     res.json({ success: true });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
