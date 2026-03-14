@@ -85,6 +85,7 @@ const customerOrderSchema = new mongoose.Schema({
   customerPhone: { type: String },
   customerAddress: { type: String },
   orderDate: { type: String, required: true },
+  completedDate: { type: String, default: null }, // Used for calculating fulfillment time metrics
   products: [{
     name: { type: String, required: true },
     price: { type: Number, required: true, min: 0 },

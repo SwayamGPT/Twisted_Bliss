@@ -68,6 +68,7 @@ type CustomerOrder = {
   customerPhone?: string;
   customerAddress?: string;
   orderDate: string;
+  completedDate?: string;
   products: Product[];
   shippingCharge: number;
   totalAmount: number;
@@ -294,9 +295,17 @@ export default function App() {
   const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
   // Wallet Shipping Deductions
   const totalShippingDeductions = walletTxns.filter(t => t.type === 'deduct_shipping').reduce((sum, t) => sum + t.amount, 0);
+  const walletTotalAdded = walletTxns.filter(t => t.type === 'add_funds').reduce((sum, t) => sum + t.amount, 0);
+  const inventoryTotalCost = inventory.reduce((sum, inv) => sum + (inv.quantity * inv.costPerUnit), 0);
 
   // Overall Business Net Profit
   const totalProfit = totalRevenue - totalLaborCost - totalMaterialCost - totalExpenses - totalShippingDeductions;
+
+  // Total Business Investment (Money tied up in inventory + wallet + all expenses & sunk costs)
+  const totalInvestment = totalLaborCost + totalMaterialCost + totalExpenses + walletTotalAdded + inventoryTotalCost;
+  
+  // Growth / Return on Investment (ROI)
+  const roiPercentage = totalInvestment > 0 ? ((totalProfit / totalInvestment) * 100).toFixed(1) : '0.0';
 
   const pendingOrders = orders.filter(o => !o.completed).length + customerOrders.filter(o => o.status === 'Pending').length;
   const completedOrders = orders.filter(o => o.completed).length + customerOrders.filter(o => o.status === 'Completed').length;
@@ -346,6 +355,59 @@ export default function App() {
   const efficiencyData = Array.from(crafterEfficiencyMap.entries())
     .map(([name, items]) => ({ name, items }))
     .sort((a, b) => b.items - a.items);
+
+  // 4. Customer Lifetime Value (CLV) Leaderboard
+  const clvMap = new Map<string, number>();
+  customerOrders.filter(o => o.status === 'Completed').forEach(o => {
+    const key = `${o.customerName}${o.customerPhone ? ' ('+o.customerPhone+')' : ''}`;
+    clvMap.set(key, (clvMap.get(key) || 0) + o.totalAmount);
+  });
+  const clvData = Array.from(clvMap.entries())
+    .map(([name, totalSpent]) => ({ name, totalSpent }))
+    .sort((a, b) => b.totalSpent - a.totalSpent)
+    .slice(0, 5); // Top 5 VIPs
+
+  // 5. Average Order Fulfillment Time (Days)
+  let totalFulfillmentDays = 0;
+  let fulfilledOrdersCount = 0;
+  customerOrders.filter(o => o.status === 'Completed' && o.completedDate).forEach(o => {
+    const start = new Date(o.orderDate).getTime();
+    const end = new Date(o.completedDate!).getTime();
+    const days = Math.max(0, (end - start) / (1000 * 60 * 60 * 24));
+    totalFulfillmentDays += days;
+    fulfilledOrdersCount++;
+  });
+  const avgFulfillmentTime = fulfilledOrdersCount > 0 ? (totalFulfillmentDays / fulfilledOrdersCount).toFixed(1) : '-';
+
+  // 6. Predictive Inventory (Pending Yarn Demand)
+  const pendingYarnDemand = new Map<string, number>();
+  let totalPendingStuffing = 0;
+  orders.filter(o => !o.completed).forEach(o => {
+    o.materialsObj?.yarns?.forEach(y => {
+      if(y.color && y.qty) {
+        const colorKey = y.color.toLowerCase();
+        pendingYarnDemand.set(colorKey, (pendingYarnDemand.get(colorKey) || 0) + Number(y.qty));
+      }
+    });
+    if(o.materialsObj?.stuffing) {
+       totalPendingStuffing += Number(o.materialsObj.stuffing);
+    }
+  });
+
+  // Check inventory for warnings
+  const inventoryWarnings: string[] = [];
+  inventory.forEach(inv => {
+    if(inv.category.toLowerCase().includes('yarn')) {
+      const demand = pendingYarnDemand.get(inv.name.toLowerCase()) || 0;
+      if(inv.quantity < demand) {
+         inventoryWarnings.push(`Shortage: Need ${demand}${inv.unit} of ${inv.name} for pending orders, but only ${inv.quantity}${inv.unit} in stock!`);
+      }
+    } else if(inv.category.toLowerCase().includes('stuff')) {
+      if(inv.quantity < totalPendingStuffing) {
+         inventoryWarnings.push(`Shortage: Need ${totalPendingStuffing}${inv.unit} of Stuffing, but only ${inv.quantity}${inv.unit} in stock!`);
+      }
+    }
+  });
 
 
   const handleHooksChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -597,11 +659,16 @@ export default function App() {
 
   const toggleSalesOrderStatus = async (order: CustomerOrder) => {
     const newStatus = order.status === 'Completed' ? 'Pending' : (order.status === 'Pending' ? 'Completed' : 'Pending');
+    const updatePayload = {
+      ...order,
+      status: newStatus,
+      completedDate: newStatus === 'Completed' ? new Date().toISOString().split('T')[0] : undefined
+    };
     try {
       const res = await fetch(`/api/customer-orders/${order._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...order, status: newStatus })
+        body: JSON.stringify(updatePayload)
       });
       const updatedOrder = await res.json();
       setCustomerOrders(customerOrders.map(o => o._id === order._id ? updatedOrder : o));
@@ -614,7 +681,6 @@ export default function App() {
   const salesTotalOrders = customerOrders.length;
 
   // Wallet Functions & Stats
-  const walletTotalAdded = walletTxns.filter(t => t.type === 'add_funds').reduce((sum, t) => sum + t.amount, 0);
   const walletTotalDeducted = walletTxns.filter(t => t.type === 'deduct_shipping').reduce((sum, t) => sum + t.amount, 0);
   const walletBalance = walletTotalAdded - walletTotalDeducted;
 
@@ -857,9 +923,45 @@ export default function App() {
               <p className="text-slate-600">Overview of all operations, revenue, and costs across all crafters.</p>
             </div>
 
+            {/* Hero ROI / Investment KPI Banner */}
+            <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500 rounded-full blur-3xl opacity-20 -mr-20 -mt-20"></div>
+              <div className="absolute bottom-0 left-0 w-64 h-64 bg-sky-500 rounded-full blur-3xl opacity-20 -ml-20 -mb-20"></div>
+              
+              <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="border-b md:border-b-0 md:border-r border-slate-700 pb-6 md:pb-0 px-4">
+                  <p className="text-slate-400 font-semibold mb-2 uppercase tracking-widest text-xs flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-emerald-400" /> ROI & Growth
+                  </p>
+                  <p className="text-5xl font-display font-black text-white flex items-baseline gap-2">
+                    {Number(roiPercentage) >= 0 ? '+' : ''}{roiPercentage}%
+                    <span className="text-sm font-medium text-emerald-400 align-middle bg-emerald-400/10 px-2 py-1 rounded-md">Growth</span>
+                  </p>
+                </div>
+                <div className="border-b md:border-b-0 md:border-r border-slate-700 pb-6 md:pb-0 px-4">
+                  <p className="text-slate-400 font-semibold mb-2 uppercase tracking-widest text-xs flex items-center gap-2">
+                    <Wallet className="w-4 h-4 text-sky-400" /> Total Investment
+                  </p>
+                  <p className="text-4xl font-bold text-slate-100">
+                    ₹{totalInvestment.toFixed(2)}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-2">Capital wrapped in inventory, wallet, and labor.</p>
+                </div>
+                <div className="px-4">
+                  <p className="text-slate-400 font-semibold mb-2 uppercase tracking-widest text-xs flex items-center gap-2">
+                    <IndianRupee className="w-4 h-4 text-emerald-400" /> Total Net Profit
+                  </p>
+                  <p className={`text-4xl font-bold ${totalProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {totalProfit >= 0 ? '+' : '-'}₹{Math.abs(totalProfit).toFixed(2)}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-2">True profit after deduicting all expenses.</p>
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <StatCard title="Total Revenue" value={`₹${totalRevenue.toFixed(2)}`} icon={IndianRupee} color="text-sky-600" bgColor="bg-sky-400/20" />
-              <StatCard title="Total Profit" value={`₹${totalProfit.toFixed(2)}`} icon={TrendingUp} color="text-emerald-600" bgColor="bg-emerald-400/20" />
+              <StatCard title="Operating Expenses" value={`₹${(totalExpenses + totalShippingDeductions).toFixed(2)}`} icon={Receipt} color="text-rose-600" bgColor="bg-rose-400/20" />
               <StatCard title="Total Material Cost" value={`₹${totalMaterialCost.toFixed(2)}`} icon={Package} color="text-amber-600" bgColor="bg-amber-400/20" />
               <StatCard title="Total Labor Cost" value={`₹${totalLaborCost.toFixed(2)}`} icon={Users} color="text-indigo-600" bgColor="bg-indigo-400/20" />
             </div>
@@ -948,6 +1050,41 @@ export default function App() {
                   ) : (
                     <div className="h-full flex items-center justify-center text-slate-400">No revenue data for the last 6 months.</div>
                   )}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+              {/* Customer Lifetime Value (CLV) VIP Leaderboard */}
+              <div className="bg-white p-8 rounded-3xl shadow-xl border border-amber-200">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-3 bg-amber-100 rounded-xl text-amber-600"><Users size={24} /></div>
+                  <h3 className="text-xl font-bold text-slate-800">VIP Customers (CLV)</h3>
+                </div>
+                <div className="space-y-4">
+                  {clvData.length > 0 ? clvData.map((cust, idx) => (
+                    <div key={idx} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-amber-200 text-amber-800 flex items-center justify-center font-bold text-sm">
+                          #{idx + 1}
+                        </div>
+                        <span className="font-semibold text-slate-700">{cust.name}</span>
+                      </div>
+                      <span className="font-bold text-emerald-600">₹{cust.totalSpent.toFixed(2)}</span>
+                    </div>
+                  )) : <div className="text-center text-slate-400 py-4">No completed orders yet.</div>}
+                </div>
+              </div>
+
+              {/* Order Fulfillment Metrics */}
+              <div className="bg-white p-8 rounded-3xl shadow-xl border border-indigo-200 flex flex-col justify-center items-center text-center">
+                <div className="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mb-6 shadow-inner border border-indigo-200">
+                  <Package className="w-10 h-10 text-indigo-600" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-800 mb-2">Avg. Fulfillment Time</h3>
+                <p className="text-slate-500 mb-6 max-w-xs">The average number of days it takes from receiving an order to marking it completed.</p>
+                <div className="text-6xl font-black text-indigo-600 font-display">
+                  {avgFulfillmentTime} <span className="text-2xl font-bold text-indigo-400">Days</span>
                 </div>
               </div>
             </div>
@@ -1691,6 +1828,21 @@ export default function App() {
                 {isInventoryFormOpen ? 'Close' : 'Add Item'}
               </button>
             </div>
+
+            {/* Predictive Inventory Warnings */}
+            {inventoryWarnings.length > 0 && (
+              <div className="bg-rose-50 border-l-4 border-rose-500 p-6 rounded-r-2xl shadow-sm mb-8">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 bg-rose-100 rounded-lg"><TrendingUp className="w-5 h-5 text-rose-600" /></div>
+                  <h3 className="text-lg font-bold text-rose-800">Action Required: Supply Shortage for Pending Orders</h3>
+                </div>
+                <ul className="space-y-2 ml-12">
+                  {inventoryWarnings.map((warn, i) => (
+                    <li key={i} className="text-rose-700 font-medium text-sm list-disc">{warn}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             <AnimatePresence>
               {isInventoryFormOpen && (
