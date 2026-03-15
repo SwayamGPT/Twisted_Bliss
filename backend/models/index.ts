@@ -72,6 +72,7 @@ export interface ICustomerOrder extends Document {
     qty: number;
   }[];
   shippingCharge: number;
+  actualShippingCost: number;
   totalAmount: number;
   status: string;
 }
@@ -88,6 +89,7 @@ const customerOrderSchema = new Schema<ICustomerOrder>({
     qty: { type: Number, required: true, min: 1 },
   }],
   shippingCharge: { type: Number, default: 0 },
+  actualShippingCost: { type: Number, default: 0 },
   totalAmount: { type: Number, required: true },
   status: { type: String, default: 'Pending' },
 });

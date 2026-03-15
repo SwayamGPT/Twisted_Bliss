@@ -36,6 +36,7 @@ export type CustomerOrder = {
   completedDate?: string;
   products: Product[];
   shippingCharge: number;
+  actualShippingCost: number;
   totalAmount: number;
   status: string;
 };

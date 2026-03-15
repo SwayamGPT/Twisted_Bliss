@@ -64,6 +64,7 @@ export const useData = () => {
   const [salesOrderDate, setSalesOrderDate] = useState(new Date().toISOString().split('T')[0]);
   const [products, setProducts] = useState<Product[]>([{ name: '', price: 0, qty: 1 }]);
   const [shippingCharge, setShippingCharge] = useState<number | ''>(0);
+  const [actualShippingCost, setActualShippingCost] = useState<number | ''>(0);
   const [salesStatus, setSalesStatus] = useState('Pending');
   const [isSalesFormOpen, setIsSalesFormOpen] = useState(false);
   const [editSalesOrderId, setEditSalesOrderId] = useState<string | null>(null);
@@ -441,7 +442,8 @@ export const useData = () => {
   const resetSalesForm = () => {
     setCustomerName(''); setCustomerPhone(''); setCustomerAddress('');
     setSalesOrderDate(new Date().toISOString().split('T')[0]);
-    setProducts([{ name: '', price: 0, qty: 1 }]); setShippingCharge(0);
+    setProducts([{ name: '', price: 0, qty: 1 }]); 
+    setShippingCharge(0); setActualShippingCost(0);
     setSalesStatus('Pending'); setEditSalesOrderId(null); setIsSalesFormOpen(false);
   };
 
@@ -449,11 +451,12 @@ export const useData = () => {
     e.preventDefault();
     const validProducts = products.filter(p => p.name.trim() !== '');
     const sCharge = Number(shippingCharge) || 0;
+    const actualSCost = salesStatus === 'Cancelled' ? 0 : (Number(actualShippingCost) || 0);
     const totalAmt = validProducts.reduce((sum, p) => sum + (p.price * p.qty), 0) + sCharge;
 
     const orderData = {
       customerName, customerPhone, customerAddress, orderDate: salesOrderDate,
-      products: validProducts, shippingCharge: sCharge, totalAmount: totalAmt, status: salesStatus
+      products: validProducts, shippingCharge: sCharge, actualShippingCost: actualSCost, totalAmount: totalAmt, status: salesStatus
     };
 
     const token = localStorage.getItem('tb_admin_token');
@@ -485,12 +488,12 @@ export const useData = () => {
         setCustomerOrders([savedOrder, ...customerOrders]);
       }
 
-      // Handle Wallet Deduction
+      // Handle Wallet Deduction based on ACTUAL cost (and status)
       const orderId = savedOrder._id;
       const existingTxn = walletTxns.find(t => t.referenceId === `Order: ${orderId}`);
       
       if (existingTxn) {
-        if (sCharge > 0) {
+        if (actualSCost > 0 && salesStatus !== 'Cancelled') {
           // Update existing txn
           const walletRes = await fetch(`/api/wallet/transactions/${existingTxn._id}`, {
             method: 'PUT',
@@ -498,21 +501,21 @@ export const useData = () => {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ ...existingTxn, amount: sCharge, date: salesOrderDate })
+            body: JSON.stringify({ ...existingTxn, amount: actualSCost, date: salesOrderDate })
           });
           if (walletRes.ok) {
             const updatedTxn = await walletRes.json();
             setWalletTxns(walletTxns.map(t => t._id === updatedTxn._id ? updatedTxn : t));
           }
         } else {
-          // Delete existing txn if sCharge is now 0
+          // Delete existing txn if actualSCost is 0 or order is Cancelled
           await fetch(`/api/wallet/transactions/${existingTxn._id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
           });
           setWalletTxns(walletTxns.filter(t => t._id !== existingTxn._id));
         }
-      } else if (sCharge > 0) {
+      } else if (actualSCost > 0 && salesStatus !== 'Cancelled') {
         // Create new txn
         const walletRes = await fetch('/api/wallet/transactions', {
           method: 'POST',
@@ -522,9 +525,9 @@ export const useData = () => {
           },
           body: JSON.stringify({
             date: salesOrderDate,
-            aggregator: 'Shiprocket', // Default aggregator
+            aggregator: 'Shiprocket',
             type: 'deduct_shipping',
-            amount: sCharge,
+            amount: actualSCost,
             referenceId: `Order: ${orderId}`
           })
         });
@@ -542,6 +545,7 @@ export const useData = () => {
     setCustomerName(order.customerName); setCustomerPhone(order.customerPhone || '');
     setCustomerAddress(order.customerAddress || ''); setSalesOrderDate(order.orderDate);
     setProducts([...order.products]); setShippingCharge(order.shippingCharge);
+    setActualShippingCost(order.actualShippingCost || 0);
     setSalesStatus(order.status); setEditSalesOrderId(order._id!);
     setIsSalesFormOpen(true); window.scrollTo({ top: 0, behavior: 'smooth' });
   };

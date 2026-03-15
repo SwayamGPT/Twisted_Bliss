@@ -37,6 +37,8 @@ interface OrderDeskTabProps {
   setIsInventoryFormOpen: Dispatch<SetStateAction<boolean>>;
   shippingCharge: string | number;
   setShippingCharge: Dispatch<SetStateAction<number | "">>;
+  actualShippingCost: string | number;
+  setActualShippingCost: Dispatch<SetStateAction<number | "">>;
   salesStatus: string;
   setSalesStatus: Dispatch<SetStateAction<string>>;
   toggleSalesOrderStatus: (order: CustomerOrder) => void;
@@ -53,7 +55,8 @@ export const OrderDeskTab: React.FC<OrderDeskTabProps> = ({
   customerPhone, setCustomerPhone, customerAddress, setCustomerAddress,
   products, updateSaleProduct, addSaleProduct, removeSaleProduct,
   inventory, setInvName, setInvCategory, setActiveTab, setIsInventoryFormOpen,
-  shippingCharge, setShippingCharge, salesStatus, setSalesStatus,
+  shippingCharge, setShippingCharge, actualShippingCost, setActualShippingCost,
+  salesStatus, setSalesStatus,
   toggleSalesOrderStatus, handleSalesEdit, handleSalesDelete,
   handleGenerateInvoice, handleCopyShippingLabel
 }) => {
@@ -208,10 +211,14 @@ export const OrderDeskTab: React.FC<OrderDeskTabProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                   <div>
-                    <label className="block text-xs sm:text-sm font-semibold text-slate-600 mb-1 sm:mb-2">Shipping Charge (₹)</label>
+                    <label className="block text-xs sm:text-sm font-semibold text-slate-600 mb-1 sm:mb-2">Ship. Charge (Cust) ₹</label>
                     <input type="number" min="0" step="0.01" value={shippingCharge} onChange={e => setShippingCharge(e.target.value === '' ? '' : Number(e.target.value))} className="w-full px-4 py-2 sm:py-3 bg-sky-50 border border-sky-200 rounded-lg focus:ring-2 focus:ring-sky-500 text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs sm:text-sm font-semibold text-slate-600 mb-1 sm:mb-2">Ship. Cost (Paid) ₹</label>
+                    <input type="number" min="0" step="0.01" value={actualShippingCost} onChange={e => setActualShippingCost(e.target.value === '' ? '' : Number(e.target.value))} className="w-full px-4 py-2 sm:py-3 bg-sky-50 border border-sky-200 rounded-lg focus:ring-2 focus:ring-sky-500 text-sm" />
                   </div>
                   <div>
                     <label className="block text-xs sm:text-sm font-semibold text-slate-600 mb-1 sm:mb-2">Status</label>
@@ -246,7 +253,7 @@ export const OrderDeskTab: React.FC<OrderDeskTabProps> = ({
                 <th className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">Date</th>
                 <th className="px-4 sm:px-6 py-3 sm:py-4">Customer</th>
                 <th className="px-4 sm:px-6 py-3 sm:py-4 min-w-[150px] sm:min-w-[200px]">Products</th>
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-right">Ship</th>
+                <th className="px-4 sm:px-6 py-3 sm:py-4 text-right">Ship (Cust/Paid)</th>
                 <th className="px-4 sm:px-6 py-3 sm:py-4 text-right">Total</th>
                 <th className="px-4 sm:px-6 py-3 sm:py-4 text-center">Status</th>
                 <th className="px-4 sm:px-6 py-3 sm:py-4 text-center">Actions</th>
@@ -290,7 +297,12 @@ export const OrderDeskTab: React.FC<OrderDeskTabProps> = ({
                           <div key={i} className="truncate max-w-[120px] sm:max-w-none"><span className="font-semibold text-slate-600">{p.name}</span> <span className="text-slate-500">({p.qty})</span></div>
                         ))}
                       </td>
-                      <td className="px-4 sm:px-6 py-4 sm:py-5 text-right text-slate-500">₹{order.shippingCharge?.toFixed(0) || '0'}</td>
+                      <td className="px-4 sm:px-6 py-4 sm:py-5 text-right text-slate-500">
+                        <div className="text-[10px] sm:text-xs">
+                          <div>C: ₹{order.shippingCharge?.toFixed(0) || '0'}</div>
+                          <div className="text-rose-500 font-medium">P: ₹{order.actualShippingCost?.toFixed(0) || '0'}</div>
+                        </div>
+                      </td>
                       <td className="px-4 sm:px-6 py-4 sm:py-5 text-right font-bold text-amber-600 text-sm sm:text-base">₹{order.totalAmount.toFixed(0)}</td>
                       <td className="px-4 sm:px-6 py-4 sm:py-5 text-center">
                         <button
