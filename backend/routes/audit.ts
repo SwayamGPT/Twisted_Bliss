@@ -1,6 +1,6 @@
 import express from 'express';
-import { AuditLog } from '../models';
-import { connectDB } from '../config/db';
+import { AuditLog } from '../models/index.js';
+import { connectDB } from '../config/db.js';
 
 const router = express.Router();
 

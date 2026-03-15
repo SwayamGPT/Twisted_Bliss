@@ -1,9 +1,9 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { User } from '../models';
-import { connectDB } from '../config/db';
-import { AuthRequest, createAuditLog } from '../middleware';
+import { User } from '../models/index.js';
+import { connectDB } from '../config/db.js';
+import { AuthRequest, createAuditLog } from '../middleware/index.js';
 
 const router = express.Router();
 

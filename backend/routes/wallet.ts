@@ -1,7 +1,7 @@
 import express from 'express';
-import { WalletTransaction } from '../models';
-import { connectDB } from '../config/db';
-import { AuthRequest, createAuditLog, validateBody, walletTxnSchemaZod } from '../middleware';
+import { WalletTransaction } from '../models/index.js';
+import { connectDB } from '../config/db.js';
+import { AuthRequest, createAuditLog, validateBody, walletTxnSchemaZod } from '../middleware/index.js';
 
 const router = express.Router();
 

@@ -1,7 +1,7 @@
 import express from 'express';
-import { Crafter, Order } from '../models';
-import { connectDB } from '../config/db';
-import { AuthRequest, createAuditLog, validateBody, crafterSchemaZod } from '../middleware';
+import { Crafter, Order } from '../models/index.js';
+import { connectDB } from '../config/db.js';
+import { AuthRequest, createAuditLog, validateBody, crafterSchemaZod } from '../middleware/index.js';
 
 const router = express.Router();
 
