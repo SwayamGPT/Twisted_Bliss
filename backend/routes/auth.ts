@@ -61,11 +61,19 @@ router.post('/users', async (req: AuthRequest, res) => {
   }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', async (req, res, next) => {
   const JWT_SECRET = process.env.JWT_SECRET || 'fallback_jwt_secret_please_change';
   try {
-    await connectDB();
+    try {
+      await connectDB();
+    } catch (dbErr: any) {
+      console.error('DB Connection error during login:', dbErr);
+      return res.status(503).json({ error: 'Service Unavailable: Database connection failed. Please check your MongoDB URI.' });
+    }
+    
     const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Email and password are required' });
+    
     const normalizedEmail = email.toLowerCase();
     const user = await User.findOne({ email: normalizedEmail });
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
@@ -76,7 +84,8 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user: { id: user._id, name: user.name, email: user.email, profilePhotoUrl: user.profilePhotoUrl } });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    console.error('Login error:', err);
+    next(err); // Pass to global error handler
   }
 });
 

@@ -21,6 +21,16 @@ app.get('/api/health', (req, res) => {
 // API Routes
 app.use('/api', requireAuth as express.RequestHandler, apiRoutes);
 
+// Global Error Handler
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('Global Error Handler caught:', err);
+  const status = err.status || err.statusCode || 500;
+  res.status(status).json({
+    error: err.message || 'Internal Server Error',
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
+});
+
 async function startServer() {
   if (process.env.NODE_ENV === 'production') {
     app.use(express.static('dist'));

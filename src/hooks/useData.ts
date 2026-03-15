@@ -158,8 +158,13 @@ export const useData = () => {
       setExpenses(expData);
       setError('');
     } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'An unexpected error occurred.');
+      console.error('FetchData error:', err);
+      // Differentiate between network errors and others
+      if (err.message === 'Failed to fetch') {
+        setError('Network error: Could not reach the server. Please check your internet or if the server is down.');
+      } else {
+        setError(err.message || 'An unexpected error occurred while loading data.');
+      }
     } finally {
       setLoading(false);
     }
@@ -191,11 +196,12 @@ export const useData = () => {
         setIsProfileModalOpen(false);
         toast.success(`Welcome back, ${data.user.name}!`);
       } else {
-        const errData = await res.json();
-        toast.error(errData.error || 'Invalid credentials.');
+        const errData = await res.json().catch(() => ({ error: `Server error (${res.status})` }));
+        toast.error(errData.error || `Login failed with status ${res.status}`);
       }
-    } catch (err) {
-      toast.error('Failed to connect to server.');
+    } catch (err: any) {
+      console.error('Login error:', err);
+      toast.error(err.message === 'Failed to fetch' ? 'Connection failed: Server unreachable.' : 'An error occurred during login.');
     } finally {
       setIsLoggingIn(false);
     }

@@ -84,7 +84,12 @@ export const requireAuth = async (req: AuthRequest, res: express.Response, next:
   const token = authHeader.split(' ')[1];
   try {
     const decoded: any = jwt.verify(token, JWT_SECRET);
-    await connectDB();
+    try {
+      await connectDB();
+    } catch (dbErr: any) {
+      console.error('DB Connection Error in requireAuth:', dbErr);
+      return res.status(503).json({ error: 'Service Unavailable: Database connection failed.' });
+    }
     const user = await User.findById(decoded.userId).select('-passwordHash');
     if (!user) return res.status(401).json({ error: 'User removed.' });
     req.user = user;
