@@ -1,14 +1,44 @@
-import mongoose from 'mongoose';
+import mongoose, { Document, Schema, Model } from 'mongoose';
 
-const crafterSchema = new mongoose.Schema({
+export interface ICrafter extends Document {
+  name: string;
+  phone: string;
+  address: string;
+  hooks: number;
+}
+
+const crafterSchema = new Schema<ICrafter>({
   name: { type: String, required: true },
   phone: { type: String, default: '' },
   address: { type: String, default: '' },
   hooks: { type: Number, default: 0 },
 });
 
-const orderSchema = new mongoose.Schema({
-  crafterId: { type: mongoose.Schema.Types.ObjectId, ref: 'Crafter', required: true },
+export interface IOrder extends Document {
+  crafterId: mongoose.Types.ObjectId;
+  orderDate: string;
+  piece: string;
+  materialsObj: {
+    yarns: { color: string; qty: string }[];
+    stuffing: string;
+    wire: string;
+    eyes: string;
+  };
+  qtyOrdered: number;
+  qtyReceived: number;
+  timeTaken: string;
+  materialCost: number;
+  laborCost: number;
+  sellingPrice: number;
+  totalLabor: number;
+  totalCost: number;
+  revenue: number;
+  profit: number;
+  completed: boolean;
+}
+
+const orderSchema = new Schema<IOrder>({
+  crafterId: { type: Schema.Types.ObjectId, ref: 'Crafter', required: true },
   orderDate: { type: String, required: true },
   piece: { type: String, required: true },
   materialsObj: {
@@ -30,12 +60,28 @@ const orderSchema = new mongoose.Schema({
   completed: { type: Boolean, default: false },
 });
 
-const customerOrderSchema = new mongoose.Schema({
+export interface ICustomerOrder extends Document {
+  customerName: string;
+  customerPhone?: string;
+  customerAddress?: string;
+  orderDate: string;
+  completedDate: string | null;
+  products: {
+    name: string;
+    price: number;
+    qty: number;
+  }[];
+  shippingCharge: number;
+  totalAmount: number;
+  status: string;
+}
+
+const customerOrderSchema = new Schema<ICustomerOrder>({
   customerName: { type: String, required: true },
   customerPhone: { type: String },
   customerAddress: { type: String },
   orderDate: { type: String, required: true },
-  completedDate: { type: String, default: null }, 
+  completedDate: { type: String, default: null },
   products: [{
     name: { type: String, required: true },
     price: { type: Number, required: true, min: 0 },
@@ -46,31 +92,63 @@ const customerOrderSchema = new mongoose.Schema({
   status: { type: String, default: 'Pending' },
 });
 
-const walletTransactionSchema = new mongoose.Schema({
+export interface IWalletTransaction extends Document {
+  date: string;
+  aggregator: string;
+  type: 'add_funds' | 'deduct_shipping';
+  amount: number;
+  referenceId?: string;
+}
+
+const walletTransactionSchema = new Schema<IWalletTransaction>({
   date: { type: String, required: true },
-  aggregator: { type: String, required: true }, 
+  aggregator: { type: String, required: true },
   type: { type: String, enum: ['add_funds', 'deduct_shipping'], required: true },
   amount: { type: Number, required: true, min: 0 },
-  referenceId: { type: String }, 
+  referenceId: { type: String },
 });
 
-const inventoryItemSchema = new mongoose.Schema({
+export interface IInventoryItem extends Document {
+  name: string;
+  category: string;
+  quantity: number;
+  unit: string;
+  costPerUnit: number;
+  lowStockThreshold: number;
+}
+
+const inventoryItemSchema = new Schema<IInventoryItem>({
   name: { type: String, required: true },
-  category: { type: String, required: true }, 
+  category: { type: String, required: true },
   quantity: { type: Number, required: true, min: 0 },
-  unit: { type: String, required: true }, 
+  unit: { type: String, required: true },
   costPerUnit: { type: Number, default: 0 },
   lowStockThreshold: { type: Number, default: 0 }
 });
 
-const expenseSchema = new mongoose.Schema({
+export interface IExpense extends Document {
+  date: string;
+  category: string;
+  amount: number;
+  description: string;
+}
+
+const expenseSchema = new Schema<IExpense>({
   date: { type: String, required: true },
-  category: { type: String, required: true }, 
+  category: { type: String, required: true },
   amount: { type: Number, required: true, min: 0 },
   description: { type: String, required: true }
 });
 
-const userSchema = new mongoose.Schema({
+export interface IUser extends Document {
+  name: string;
+  email: string;
+  passwordHash: string;
+  profilePhotoUrl: string;
+  role: string;
+}
+
+const userSchema = new Schema<IUser>({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   passwordHash: { type: String, required: true },
@@ -78,19 +156,27 @@ const userSchema = new mongoose.Schema({
   role: { type: String, default: 'Admin' }
 });
 
-const auditLogSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+export interface IAuditLog extends Document {
+  userId?: mongoose.Types.ObjectId;
+  userName: string;
+  action: string;
+  details?: string;
+  timestamp: Date;
+}
+
+const auditLogSchema = new Schema<IAuditLog>({
+  userId: { type: Schema.Types.ObjectId, ref: 'User' },
   userName: { type: String, required: true },
   action: { type: String, required: true },
   details: { type: String },
   timestamp: { type: Date, default: Date.now }
 });
 
-export const Crafter = mongoose.models.Crafter || mongoose.model('Crafter', crafterSchema);
-export const Order = mongoose.models.Order || mongoose.model('Order', orderSchema);
-export const CustomerOrder = mongoose.models.CustomerOrder || mongoose.model('CustomerOrder', customerOrderSchema);
-export const WalletTransaction = mongoose.models.WalletTransaction || mongoose.model('WalletTransaction', walletTransactionSchema);
-export const InventoryItem = mongoose.models.InventoryItem || mongoose.model('InventoryItem', inventoryItemSchema);
-export const Expense = mongoose.models.Expense || mongoose.model('Expense', expenseSchema);
-export const User = mongoose.models.User || mongoose.model('User', userSchema);
-export const AuditLog = mongoose.models.AuditLog || mongoose.model('AuditLog', auditLogSchema);
+export const Crafter: Model<ICrafter> = mongoose.models.Crafter || mongoose.model<ICrafter>('Crafter', crafterSchema);
+export const Order: Model<IOrder> = mongoose.models.Order || mongoose.model<IOrder>('Order', orderSchema);
+export const CustomerOrder: Model<ICustomerOrder> = mongoose.models.CustomerOrder || mongoose.model<ICustomerOrder>('CustomerOrder', customerOrderSchema);
+export const WalletTransaction: Model<IWalletTransaction> = mongoose.models.WalletTransaction || mongoose.model<IWalletTransaction>('WalletTransaction', walletTransactionSchema);
+export const InventoryItem: Model<IInventoryItem> = mongoose.models.InventoryItem || mongoose.model<IInventoryItem>('InventoryItem', inventoryItemSchema);
+export const Expense: Model<IExpense> = mongoose.models.Expense || mongoose.model<IExpense>('Expense', expenseSchema);
+export const User: Model<IUser> = mongoose.models.User || mongoose.model<IUser>('User', userSchema);
+export const AuditLog: Model<IAuditLog> = mongoose.models.AuditLog || mongoose.model<IAuditLog>('AuditLog', auditLogSchema);

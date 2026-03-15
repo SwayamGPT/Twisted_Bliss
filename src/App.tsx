@@ -32,7 +32,7 @@ export default function App() {
           className="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full border border-sky-100"
         >
           <div className="flex justify-center mb-6">
-            <img src="/Twisted_Bliss_Logo-removebg.png" alt="Twisted Bliss Logo" className="h-48 w-auto scale-125 transform" />
+            <img src="/Twisted_Bliss_Logo.jpg" alt="Twisted Bliss Logo" className="h-48 w-auto rounded-2xl shadow-lg shadow-sky-200/50" />
           </div>
           <p className="text-center text-slate-500 mb-8 text-sm">Access the secure admin gateway</p>
 
@@ -93,7 +93,7 @@ export default function App() {
       <header className="bg-white/90 backdrop-blur-md border-b border-sky-200 shadow-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-24 flex items-center justify-between">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-3">
-            <img src="/Twisted_Bliss_Logo-removebg.png" alt="Twisted Bliss Logo" className="h-16 sm:h-20 w-auto scale-110 transform" />
+            <img src="/Twisted_Bliss_Logo.jpg" alt="Twisted Bliss Logo" className="h-16 sm:h-20 w-auto rounded-xl shadow-sm" />
           </motion.div>
 
           <div className="hidden md:flex gap-2 bg-sky-50 p-1 rounded-xl border border-sky-200">

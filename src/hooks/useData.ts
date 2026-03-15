@@ -98,17 +98,29 @@ export const useData = () => {
   const [statusFilter, setStatusFilter] = useState('All');
 
   const fetchData = async () => {
+    const token = localStorage.getItem('tb_admin_token');
+    if (!token) {
+      setIsAuthenticated(false);
+      return;
+    }
+
     try {
+      const headers = { 'Authorization': `Bearer ${token}` };
       const [craftersRes, ordersRes, customerOrdersRes, walletRes, invRes, expRes, meRes, auditRes] = await Promise.all([
-        fetch('/api/crafters'),
-        fetch('/api/orders'),
-        fetch('/api/customer-orders'),
-        fetch('/api/wallet/transactions'),
-        fetch('/api/inventory'),
-        fetch('/api/expenses'),
-        fetch('/api/me'),
-        fetch('/api/audit')
+        fetch('/api/crafters', { headers }),
+        fetch('/api/orders', { headers }),
+        fetch('/api/customer-orders', { headers }),
+        fetch('/api/wallet/transactions', { headers }),
+        fetch('/api/inventory', { headers }),
+        fetch('/api/expenses', { headers }),
+        fetch('/api/me', { headers }),
+        fetch('/api/audit', { headers })
       ]);
+
+      if (meRes.status === 401 || meRes.status === 403) {
+        handleLogout();
+        return;
+      }
 
       if (!craftersRes.ok || !ordersRes.ok || !customerOrdersRes.ok || !walletRes.ok || !invRes.ok || !expRes.ok) {
         throw new Error('Failed to fetch data. Please check your connection.');
@@ -189,15 +201,19 @@ export const useData = () => {
     setCurrentUser(null);
     setIsProfileDropdownOpen(false);
     setIsProfileModalOpen(false);
-    toast.success('Logged out successfully.');
+    // Do not toast if it was an automatic logout due to 401
   };
 
   const handleAddCrafter = async () => {
     if (!newCrafterName.trim()) return;
+    const token = localStorage.getItem('tb_admin_token');
     try {
       const res = await fetch('/api/crafters', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           name: newCrafterName.trim(),
           phone: newCrafterPhone.trim(),
@@ -205,6 +221,7 @@ export const useData = () => {
           hooks: 0
         })
       });
+      if (res.status === 401) return handleLogout();
       const newCrafter = await res.json();
       setCrafters([...crafters, newCrafter]);
       setNewCrafterName('');
@@ -221,8 +238,13 @@ export const useData = () => {
 
   const handleDeleteCrafter = async (id: string) => {
     if (window.confirm('Are you SURE you want to delete this portfolio? This will permanently delete her and ALL of her order history!')) {
+      const token = localStorage.getItem('tb_admin_token');
       try {
-        await fetch(`/api/crafters/${id}`, { method: 'DELETE' });
+        const res = await fetch(`/api/crafters/${id}`, { 
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.status === 401) return handleLogout();
         setCrafters(crafters.filter(c => c._id !== id));
         setOrders(orders.filter(o => o.crafterId !== id));
         if (currentCrafterId === id) {
@@ -241,12 +263,17 @@ export const useData = () => {
     const val = parseInt(e.target.value) || 0;
     if (!currentCrafterId) return;
     setCrafters(crafters.map(c => c._id === currentCrafterId ? { ...c, hooks: val } : c));
+    const token = localStorage.getItem('tb_admin_token');
     try {
-      await fetch(`/api/crafters/${currentCrafterId}`, {
+      const res = await fetch(`/api/crafters/${currentCrafterId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ hooks: val })
       });
+      if (res.status === 401) return handleLogout();
     } catch (err) {
       console.error('Failed to update hooks', err);
       fetchData();
@@ -290,21 +317,30 @@ export const useData = () => {
       completed: qReceived >= qOrdered && qOrdered > 0
     };
 
+    const token = localStorage.getItem('tb_admin_token');
     try {
       if (editOrderId) {
         const res = await fetch(`/api/orders/${editOrderId}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
           body: JSON.stringify(orderData)
         });
+        if (res.status === 401) return handleLogout();
         const updatedOrder = await res.json();
         setOrders(orders.map(o => o._id === editOrderId ? updatedOrder : o));
       } else {
         const res = await fetch('/api/orders', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
           body: JSON.stringify(orderData)
         });
+        if (res.status === 401) return handleLogout();
         const newOrder = await res.json();
         setOrders([...orders, newOrder]);
       }
@@ -328,8 +364,13 @@ export const useData = () => {
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this order?')) {
+      const token = localStorage.getItem('tb_admin_token');
       try {
-        await fetch(`/api/orders/${id}`, { method: 'DELETE' });
+        const res = await fetch(`/api/orders/${id}`, { 
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.status === 401) return handleLogout();
         setOrders(orders.filter(o => o._id !== id));
       } catch (err) {
         console.error('Failed to delete order', err);
@@ -338,12 +379,17 @@ export const useData = () => {
   };
 
   const toggleOrderStatus = async (orderId: string, currentStatus: boolean, order: Order) => {
+    const token = localStorage.getItem('tb_admin_token');
     try {
       const res = await fetch(`/api/orders/${orderId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ completed: !currentStatus }),
       });
+      if (res.status === 401) return handleLogout();
       const updatedOrder = await res.json();
       setOrders(orders.map(o => o._id === orderId ? updatedOrder : o));
 
@@ -355,9 +401,14 @@ export const useData = () => {
             if (matchedItem && matchedItem._id) {
               const newQty = Math.max(0, matchedItem.quantity - Number(y.qty));
               const invRes = await fetch(`/api/inventory/${matchedItem._id}`, {
-                method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                method: 'PUT', 
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({ ...matchedItem, quantity: newQty })
               });
+              if (invRes.status === 401) return handleLogout();
               const updatedInv = await invRes.json();
               setInventory(prev => prev.map(inv => inv._id === updatedInv._id ? updatedInv : inv));
             }
@@ -393,17 +444,30 @@ export const useData = () => {
       products: validProducts, shippingCharge: sCharge, totalAmount: totalAmt, status: salesStatus
     };
 
+    const token = localStorage.getItem('tb_admin_token');
     try {
       if (editSalesOrderId) {
         const res = await fetch(`/api/customer-orders/${editSalesOrderId}`, {
-          method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(orderData)
+          method: 'PUT', 
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }, 
+          body: JSON.stringify(orderData)
         });
+        if (res.status === 401) return handleLogout();
         const updated = await res.json();
         setCustomerOrders(customerOrders.map(o => o._id === editSalesOrderId ? updated : o));
       } else {
         const res = await fetch('/api/customer-orders', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(orderData)
+          method: 'POST', 
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }, 
+          body: JSON.stringify(orderData)
         });
+        if (res.status === 401) return handleLogout();
         const saved = await res.json();
         setCustomerOrders([saved, ...customerOrders]);
       }
@@ -421,7 +485,12 @@ export const useData = () => {
 
   const handleSalesDelete = async (id: string) => {
     if (window.confirm('Delete this order?')) {
-      await fetch(`/api/customer-orders/${id}`, { method: 'DELETE' });
+      const token = localStorage.getItem('tb_admin_token');
+      const res = await fetch(`/api/customer-orders/${id}`, { 
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.status === 401) return handleLogout();
       setCustomerOrders(customerOrders.filter(o => o._id !== id));
     }
   };
@@ -432,9 +501,16 @@ export const useData = () => {
       ...order, status: newStatus,
       completedDate: newStatus === 'Completed' ? new Date().toISOString().split('T')[0] : undefined
     };
+    const token = localStorage.getItem('tb_admin_token');
     const res = await fetch(`/api/customer-orders/${order._id}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updatePayload)
+      method: 'PUT', 
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }, 
+      body: JSON.stringify(updatePayload)
     });
+    if (res.status === 401) return handleLogout();
     const updated = await res.json();
     setCustomerOrders(customerOrders.map(o => o._id === order._id ? updated : o));
   };
@@ -444,9 +520,16 @@ export const useData = () => {
     const txnData = {
       date: walletDate, aggregator, type: 'add_funds', amount: Number(walletAmount), referenceId
     };
+    const token = localStorage.getItem('tb_admin_token');
     const res = await fetch('/api/wallet/transactions', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(txnData)
+      method: 'POST', 
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }, 
+      body: JSON.stringify(txnData)
     });
+    if (res.status === 401) return handleLogout();
     const newTxn = await res.json();
     setWalletTxns([newTxn, ...walletTxns]);
     setWalletAmount(''); setReferenceId(''); setIsWalletFormOpen(false);
@@ -454,7 +537,12 @@ export const useData = () => {
 
   const handleWalletDelete = async (id: string) => {
     if (window.confirm('Delete transaction?')) {
-      await fetch(`/api/wallet/transactions/${id}`, { method: 'DELETE' });
+      const token = localStorage.getItem('tb_admin_token');
+      const res = await fetch(`/api/wallet/transactions/${id}`, { 
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.status === 401) return handleLogout();
       setWalletTxns(walletTxns.filter(t => t._id !== id));
     }
   };
@@ -465,16 +553,29 @@ export const useData = () => {
       name: invName, category: invCategory, quantity: Number(invQty),
       unit: invUnit, costPerUnit: Number(invCost), lowStockThreshold: Number(invThreshold)
     };
+    const token = localStorage.getItem('tb_admin_token');
     if (editInventoryId) {
       const res = await fetch(`/api/inventory/${editInventoryId}`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(invData)
+        method: 'PUT', 
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }, 
+        body: JSON.stringify(invData)
       });
+      if (res.status === 401) return handleLogout();
       const updated = await res.json();
       setInventory(inventory.map(i => i._id === editInventoryId ? updated : i));
     } else {
       const res = await fetch('/api/inventory', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(invData)
+        method: 'POST', 
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }, 
+        body: JSON.stringify(invData)
       });
+      if (res.status === 401) return handleLogout();
       const saved = await res.json();
       setInventory([...inventory, saved]);
     }
@@ -489,7 +590,12 @@ export const useData = () => {
 
   const handleInventoryDelete = async (id: string) => {
     if (window.confirm('Delete item?')) {
-      await fetch(`/api/inventory/${id}`, { method: 'DELETE' });
+      const token = localStorage.getItem('tb_admin_token');
+      const res = await fetch(`/api/inventory/${id}`, { 
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.status === 401) return handleLogout();
       setInventory(inventory.filter(i => i._id !== id));
     }
   };
@@ -502,16 +608,29 @@ export const useData = () => {
   const handleExpenseSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const expData = { date: expDate, category: expCategory, amount: Number(expAmount), description: expDesc };
+    const token = localStorage.getItem('tb_admin_token');
     if (editExpenseId) {
       const res = await fetch(`/api/expenses/${editExpenseId}`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(expData)
+        method: 'PUT', 
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }, 
+        body: JSON.stringify(expData)
       });
+      if (res.status === 401) return handleLogout();
       const updated = await res.json();
       setExpenses(expenses.map(exp => exp._id === editExpenseId ? updated : exp));
     } else {
       const res = await fetch('/api/expenses', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(expData)
+        method: 'POST', 
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }, 
+        body: JSON.stringify(expData)
       });
+      if (res.status === 401) return handleLogout();
       const saved = await res.json();
       setExpenses([saved, ...expenses]);
     }
@@ -525,7 +644,12 @@ export const useData = () => {
 
   const handleExpenseDelete = async (id: string) => {
     if (window.confirm('Delete expense?')) {
-      await fetch(`/api/expenses/${id}`, { method: 'DELETE' });
+      const token = localStorage.getItem('tb_admin_token');
+      const res = await fetch(`/api/expenses/${id}`, { 
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.status === 401) return handleLogout();
       setExpenses(expenses.filter(e => e._id !== id));
     }
   };
@@ -553,9 +677,19 @@ export const useData = () => {
     setIsUpdatingProfile(true);
     const payload: any = { name: profileName, email: profileEmail.toLowerCase(), profilePhotoUrl };
     if (profilePassword) payload.password = profilePassword;
+    const token = localStorage.getItem('tb_admin_token');
     const res = await fetch('/api/me', {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+      method: 'PUT', 
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }, 
+      body: JSON.stringify(payload)
     });
+    if (res.status === 401) {
+      setIsUpdatingProfile(false);
+      return handleLogout();
+    }
     if (res.ok) {
       const updated = await res.json();
       setCurrentUser(updated); setIsProfileModalOpen(false); setProfilePassword('');
@@ -567,10 +701,19 @@ export const useData = () => {
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsCreatingUser(true);
+    const token = localStorage.getItem('tb_admin_token');
     const res = await fetch('/api/users', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', 
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify({ name: newUserName, email: newUserEmail.toLowerCase(), password: newUserPassword, profilePhotoUrl: newUserPhotoUrl })
     });
+    if (res.status === 401) {
+      setIsCreatingUser(false);
+      return handleLogout();
+    }
     if (res.ok) {
       toast.success(`User ${newUserName} created!`);
       setIsAddingUserModalOpen(false);
@@ -578,6 +721,7 @@ export const useData = () => {
     }
     setIsCreatingUser(false);
   };
+
 
   // Calculations for KPI
   const totalRevenue = orders.reduce((sum, o) => sum + (o.completed ? o.revenue : 0), 0) +
