@@ -117,14 +117,20 @@ export const useData = () => {
         fetch('/api/audit', { headers })
       ]);
 
-      if (meRes.status === 401 || meRes.status === 403) {
+      const allRes = [craftersRes, ordersRes, customerOrdersRes, walletRes, invRes, expRes, meRes, auditRes];
+      const authFailed = allRes.some(r => r.status === 401 || r.status === 403);
+
+      if (authFailed) {
         handleLogout();
         return;
       }
 
-      if (!craftersRes.ok || !ordersRes.ok || !customerOrdersRes.ok || !walletRes.ok || !invRes.ok || !expRes.ok) {
-        throw new Error('Failed to fetch data. Please check your connection.');
-      }
+      if (!craftersRes.ok) throw new Error(`Failed to load Crafters (${craftersRes.status})`);
+      if (!ordersRes.ok) throw new Error(`Failed to load Orders (${ordersRes.status})`);
+      if (!customerOrdersRes.ok) throw new Error(`Failed to load Customer Orders (${customerOrdersRes.status})`);
+      if (!walletRes.ok) throw new Error(`Failed to load Wallet Transactions (${walletRes.status})`);
+      if (!invRes.ok) throw new Error(`Failed to load Inventory (${invRes.status})`);
+      if (!expRes.ok) throw new Error(`Failed to load Expenses (${expRes.status})`);
 
       const [craftersData, ordersData, customerOrdersData, walletData, invData, expData] = await Promise.all([
         craftersRes.json(), ordersRes.json(), customerOrdersRes.json(),
