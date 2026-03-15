@@ -1,8 +1,8 @@
 import express from 'express';
 import { z } from 'zod';
 import jwt from 'jsonwebtoken';
-import { User, AuditLog } from '../models';
-import { connectDB } from '../config/db';
+import { User, AuditLog } from '../models/index.js';
+import { connectDB } from '../config/db.js';
 
 export const crafterSchemaZod = z.object({
   name: z.string().min(1, "Name is required"),

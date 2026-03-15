@@ -1,12 +1,12 @@
 import express from 'express';
-import authRoutes from './auth';
-import crafterRoutes from './crafters';
-import orderRoutes from './orders';
-import customerOrderRoutes from './customerOrders';
-import walletRoutes from './wallet';
-import inventoryRoutes from './inventory';
-import expenseRoutes from './expenses';
-import auditRoutes from './audit';
+import authRoutes from './auth.js';
+import crafterRoutes from './crafters.js';
+import orderRoutes from './orders.js';
+import customerOrderRoutes from './customerOrders.js';
+import walletRoutes from './wallet.js';
+import inventoryRoutes from './inventory.js';
+import expenseRoutes from './expenses.js';
+import auditRoutes from './audit.js';
 
 const router = express.Router();
 

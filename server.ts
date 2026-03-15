@@ -1,8 +1,8 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import { requireAuth } from './backend/middleware';
-import apiRoutes from './backend/routes';
+import { requireAuth } from './backend/middleware/index.js';
+import apiRoutes from './backend/routes/index.js';
 
 dotenv.config();
 
