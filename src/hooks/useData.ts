@@ -458,6 +458,7 @@ export const useData = () => {
 
     const token = localStorage.getItem('tb_admin_token');
     try {
+      let savedOrder: CustomerOrder;
       if (editSalesOrderId) {
         const res = await fetch(`/api/customer-orders/${editSalesOrderId}`, {
           method: 'PUT', 
@@ -468,8 +469,8 @@ export const useData = () => {
           body: JSON.stringify(orderData)
         });
         if (res.status === 401) return handleLogout();
-        const updated = await res.json();
-        setCustomerOrders(customerOrders.map(o => o._id === editSalesOrderId ? updated : o));
+        savedOrder = await res.json();
+        setCustomerOrders(customerOrders.map(o => o._id === editSalesOrderId ? savedOrder : o));
       } else {
         const res = await fetch('/api/customer-orders', {
           method: 'POST', 
@@ -480,9 +481,59 @@ export const useData = () => {
           body: JSON.stringify(orderData)
         });
         if (res.status === 401) return handleLogout();
-        const saved = await res.json();
-        setCustomerOrders([saved, ...customerOrders]);
+        savedOrder = await res.json();
+        setCustomerOrders([savedOrder, ...customerOrders]);
       }
+
+      // Handle Wallet Deduction
+      const orderId = savedOrder._id;
+      const existingTxn = walletTxns.find(t => t.referenceId === `Order: ${orderId}`);
+      
+      if (existingTxn) {
+        if (sCharge > 0) {
+          // Update existing txn
+          const walletRes = await fetch(`/api/wallet/transactions/${existingTxn._id}`, {
+            method: 'PUT',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ ...existingTxn, amount: sCharge, date: salesOrderDate })
+          });
+          if (walletRes.ok) {
+            const updatedTxn = await walletRes.json();
+            setWalletTxns(walletTxns.map(t => t._id === updatedTxn._id ? updatedTxn : t));
+          }
+        } else {
+          // Delete existing txn if sCharge is now 0
+          await fetch(`/api/wallet/transactions/${existingTxn._id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          setWalletTxns(walletTxns.filter(t => t._id !== existingTxn._id));
+        }
+      } else if (sCharge > 0) {
+        // Create new txn
+        const walletRes = await fetch('/api/wallet/transactions', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            date: salesOrderDate,
+            aggregator: 'Shiprocket', // Default aggregator
+            type: 'deduct_shipping',
+            amount: sCharge,
+            referenceId: `Order: ${orderId}`
+          })
+        });
+        if (walletRes.ok) {
+          const newTxn = await walletRes.json();
+          setWalletTxns([newTxn, ...walletTxns]);
+        }
+      }
+
       resetSalesForm();
     } catch (err) { console.error(err); }
   };
@@ -503,6 +554,17 @@ export const useData = () => {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.status === 401) return handleLogout();
+      
+      // Also delete associated wallet transaction
+      const txn = walletTxns.find(t => t.referenceId === `Order: ${id}`);
+      if (txn) {
+        await fetch(`/api/wallet/transactions/${txn._id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        setWalletTxns(walletTxns.filter(t => t._id !== txn._id));
+      }
+
       setCustomerOrders(customerOrders.filter(o => o._id !== id));
     }
   };

@@ -30,18 +30,18 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-sky-100 overflow-hidden"
+        className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-sky-100 overflow-hidden flex flex-col max-h-[90vh]"
       >
-        <div className="bg-sky-500 p-6 text-white flex justify-between items-center">
-          <h3 className="text-xl font-bold flex items-center gap-2">
-            <UserPlus className="w-6 h-6" /> Add New Admin
+        <div className="bg-sky-500 p-4 sm:p-6 text-white flex justify-between items-center shrink-0">
+          <h3 className="text-lg sm:text-xl font-bold flex items-center gap-2">
+            <UserPlus className="w-5 h-5 sm:w-6 sm:h-6" /> Add New Admin
           </h3>
           <button onClick={onClose} className="hover:bg-white/20 p-1 rounded-full transition-colors">
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </div>
 
-        <form onSubmit={handleCreateUser} className="p-8 space-y-5">
+        <form onSubmit={handleCreateUser} className="p-6 sm:p-8 space-y-4 sm:space-y-5 overflow-y-auto">
           <div>
             <label className="block text-sm font-semibold text-slate-600 mb-2">Full Name</label>
             <input

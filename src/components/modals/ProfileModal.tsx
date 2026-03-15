@@ -31,18 +31,18 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-sky-100 overflow-hidden"
+        className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-sky-100 overflow-hidden flex flex-col max-h-[90vh]"
       >
-        <div className="bg-sky-500 p-6 text-white flex justify-between items-center">
-          <h3 className="text-xl font-bold flex items-center gap-2">
-            <User className="w-6 h-6" /> Profile Settings
+        <div className="bg-sky-500 p-4 sm:p-6 text-white flex justify-between items-center shrink-0">
+          <h3 className="text-lg sm:text-xl font-bold flex items-center gap-2">
+            <User className="w-5 h-5 sm:w-6 sm:h-6" /> Profile Settings
           </h3>
           <button onClick={onClose} className="hover:bg-white/20 p-1 rounded-full transition-colors">
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </div>
 
-        <form onSubmit={handleUpdateProfile} className="p-8 space-y-6">
+        <form onSubmit={handleUpdateProfile} className="p-6 sm:p-8 space-y-4 sm:space-y-6 overflow-y-auto">
           <div className="flex justify-center mb-4">
             <div className="relative group">
               <div className="w-24 h-24 rounded-full border-4 border-sky-100 overflow-hidden shadow-inner">

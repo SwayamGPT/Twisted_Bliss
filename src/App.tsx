@@ -25,14 +25,14 @@ export default function App() {
   if (!d.isAuthenticated) {
     return (
       <div className="min-h-screen bg-sky-50 flex items-center justify-center p-4">
-        <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+        <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           className="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full border border-sky-100"
         >
           <div className="flex justify-center mb-6">
-            <img src="/Twisted_Bliss_Logo.jpg" alt="Twisted Bliss Logo" className="h-48 w-auto rounded-2xl shadow-lg shadow-sky-200/50" />
+            <img src="/Twisted_Bliss_Logo.jpg" alt="Twisted Bliss Logo" className="h-32 sm:h-48 w-auto rounded-2xl shadow-lg shadow-sky-200/50" />
           </div>
           <p className="text-center text-slate-500 mb-8 text-sm">Access the secure admin gateway</p>
 
@@ -83,7 +83,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-pink-50 text-slate-900 font-sans pb-20">
-      <Toaster position="top-right" toastOptions={{ duration: 3000, style: { borderRadius: '1rem', background: '#fff', color: '#334155', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' } }} />
+      <Toaster position="top-center" toastOptions={{ duration: 3000, style: { borderRadius: '1rem', background: '#fff', color: '#334155', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' } }} />
       {d.error && (
         <div className="bg-red-900/50 border-b border-red-500 text-red-200 p-4 text-center">
           {d.error}
@@ -91,9 +91,9 @@ export default function App() {
       )}
 
       <header className="bg-white/90 backdrop-blur-md border-b border-sky-200 shadow-sm sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-24 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-24 flex items-center justify-between">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-3">
-            <img src="/Twisted_Bliss_Logo.jpg" alt="Twisted Bliss Logo" className="h-16 sm:h-20 w-auto rounded-xl shadow-sm" />
+            <img src="/Twisted_Bliss_Logo.jpg" alt="Twisted Bliss Logo" className="h-12 sm:h-20 w-auto rounded-xl shadow-sm" />
           </motion.div>
 
           <div className="hidden md:flex gap-2 bg-sky-50 p-1 rounded-xl border border-sky-200">
@@ -121,12 +121,12 @@ export default function App() {
             <motion.button
               whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
               onClick={() => d.setIsProfileDropdownOpen(!d.isProfileDropdownOpen)}
-              className="w-12 h-12 rounded-full border-2 border-sky-200 overflow-hidden hover:border-sky-500 transition-all shadow-sm flex items-center justify-center bg-white"
+              className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-sky-200 overflow-hidden hover:border-sky-50 transition-all shadow-sm flex items-center justify-center bg-white"
             >
               {d.currentUser?.profilePhotoUrl ? (
                 <img src={d.currentUser.profilePhotoUrl} alt="Profile" className="w-full h-full object-cover rounded-full" />
               ) : (
-                <div className="w-full h-full bg-sky-100 flex items-center justify-center text-sky-600 font-bold uppercase text-lg">
+                <div className="w-full h-full bg-sky-100 flex items-center justify-center text-sky-600 font-bold uppercase text-base sm:text-lg">
                   {d.currentUser?.name?.charAt(0) || 'A'}
                 </div>
               )}
@@ -138,7 +138,7 @@ export default function App() {
                   <div className="fixed inset-0 z-10" onClick={() => d.setIsProfileDropdownOpen(false)}></div>
                   <motion.div
                     initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 top-14 w-48 bg-white rounded-2xl shadow-xl border border-sky-100 py-2 z-20 overflow-hidden"
+                    className="absolute right-0 top-12 sm:top-14 w-48 bg-white rounded-2xl shadow-xl border border-sky-100 py-2 z-20 overflow-hidden"
                   >
                     <div className="px-4 py-2 border-b border-sky-50 mb-1">
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Signed in as</p>
@@ -173,10 +173,10 @@ export default function App() {
       </header>
 
       {/* Mobile Navigation Bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-sky-200 z-50 px-2 py-1 flex justify-around items-center safe-area-inset-bottom shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-sky-200 z-50 px-2 py-1 flex justify-around items-center pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
         {[
           { id: 'admin', icon: LayoutDashboard, label: 'Insights' },
-          { id: 'crafters', icon: Factory, label: 'Production' },
+          { id: 'crafters', icon: Factory, label: 'Prod' },
           { id: 'sales', icon: ShoppingBag, label: 'Order' },
           { id: 'wallet', icon: Truck, label: 'Ship' },
           { id: 'inventory', icon: Box, label: 'Stock' }
@@ -186,7 +186,7 @@ export default function App() {
             onClick={() => d.setActiveTab(tab.id as any)}
             className={`flex flex-col items-center p-2 rounded-xl transition-all ${d.activeTab === tab.id ? 'text-sky-600' : 'text-slate-400'}`}
           >
-            <tab.icon className={`w-6 h-6 ${d.activeTab === tab.id ? 'stroke-[2.5px]' : 'stroke-[1.5px]'}`} />
+            <tab.icon className={`w-5 h-5 ${d.activeTab === tab.id ? 'stroke-[2.5px]' : 'stroke-[1.5px]'}`} />
             <span className="text-[10px] font-bold mt-1 uppercase tracking-tighter">{tab.label}</span>
           </button>
         ))}
@@ -200,14 +200,14 @@ export default function App() {
           }}
           className={`flex flex-col items-center p-2 rounded-xl transition-all ${['expenses', 'audit'].includes(d.activeTab) ? 'text-sky-600' : 'text-slate-400'}`}
         >
-          <History className={`w-6 h-6 ${['expenses', 'audit'].includes(d.activeTab) ? 'stroke-[2.5px]' : 'stroke-[1.5px]'}`} />
+          <History className={`w-5 h-5 ${['expenses', 'audit'].includes(d.activeTab) ? 'stroke-[2.5px]' : 'stroke-[1.5px]'}`} />
           <span className="text-[10px] font-bold mt-1 uppercase tracking-tighter">More</span>
         </button>
       </nav>
 
       <motion.main
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
-        className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8"
+        className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-6 sm:space-y-8"
       >
         {d.activeTab === 'admin' && (
           <InsightsTab
