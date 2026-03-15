@@ -3,10 +3,11 @@ import React, { useState, useEffect } from 'react';
 import {
   Plus, Edit2, Trash2, TrendingUp, IndianRupee, Package,
   Save, X, UserPlus, ChevronDown, User, LayoutDashboard, Users,
-  CheckCircle, Circle, ShoppingBag, Wallet, Box, Receipt, BarChart3, PieChart
+  CheckCircle, Circle, ShoppingBag, Wallet, Box, Receipt, BarChart3, PieChart,
+  Truck, History, Factory, Zap, Target, ArrowUpRight, AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
+import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart as RePieChart, Pie, Cell
 } from 'recharts';
@@ -35,7 +36,7 @@ const YarnBall = ({ className }: { className?: string }) => (
 // Types
 type Yarn = { color: string; qty: string };
 type Materials = { yarns: Yarn[]; stuffing: string; wire: string; eyes: string };
-type Crafter = { _id?: string; id?: string; name: string; hooks: number };
+type Crafter = { _id?: string; id?: string; name: string; phone?: string; address?: string; hooks: number };
 type Order = {
   _id?: string;
   id?: string;
@@ -102,6 +103,23 @@ type Expense = {
   description: string;
 };
 
+type User = {
+  _id: string;
+  name: string;
+  email: string;
+  profilePhotoUrl?: string;
+  role: string;
+};
+
+type AuditLog = {
+  _id: string;
+  userId: string;
+  userName: string;
+  action: string;
+  details?: string;
+  timestamp: string;
+};
+
 const StatCard = ({ title, value, icon: Icon, color, bgColor }: any) => (
   <div className="bg-sky-100 p-6 rounded-3xl shadow-lg border border-sky-200 flex items-center gap-4">
     <div className={`p-3 rounded-xl ${bgColor}`}>
@@ -114,16 +132,95 @@ const StatCard = ({ title, value, icon: Icon, color, bgColor }: any) => (
   </div>
 );
 
+// Global Fetch Interceptor
+const originalFetch = window.fetch;
+window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.href : (input as Request).url;
+  if (url.startsWith('/api') && url !== '/api/login') {
+    const token = localStorage.getItem('tb_admin_token');
+    const newInit = {
+      ...init,
+      headers: {
+        ...init?.headers,
+        'Authorization': `Bearer ${token}`
+      }
+    };
+    const res = await originalFetch(input, newInit);
+    if (res.status === 401 && token) {
+      localStorage.removeItem('tb_admin_token');
+      // No auto-refresh, just let the state handle it (App will re-render to login)
+      window.location.href = '/';
+    }
+    return res;
+  }
+  return originalFetch(input, init);
+};
+const exportToCSV = (data: any[], filename: string) => {
+  if (data.length === 0) {
+    toast.error('No data to export!');
+    return;
+  }
+  const headers = Object.keys(data[0]).filter(k => k !== '_id' && k !== '__v');
+  const csvRows = [];
+  csvRows.push(headers.join(','));
+
+  for (const row of data) {
+    const values = headers.map(header => {
+      let val = row[header];
+      if (typeof val === 'object' && val !== null) {
+        val = JSON.stringify(val).replace(/"/g, '""');
+      }
+      return `"${val}"`;
+    });
+    csvRows.push(values.join(','));
+  }
+
+  const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.setAttribute('hidden', '');
+  a.setAttribute('href', url);
+  a.setAttribute('download', `${filename}.csv`);
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  toast.success(`Exported ${filename}.csv`);
+};
+
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!localStorage.getItem('tb_admin_token'));
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
   const [crafters, setCrafters] = useState<Crafter[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [customerOrders, setCustomerOrders] = useState<CustomerOrder[]>([]);
   const [walletTxns, setWalletTxns] = useState<WalletTransaction[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [activeTab, setActiveTab] = useState<'admin' | 'crafters' | 'sales' | 'wallet' | 'inventory' | 'expenses'>('admin');
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [activeTab, setActiveTab] = useState<'admin' | 'crafters' | 'sales' | 'wallet' | 'inventory' | 'expenses' | 'audit'>('admin');
+
+  // Profile Settings Modal
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [isAddingUserModalOpen, setIsAddingUserModalOpen] = useState(false);
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [newUserPhotoUrl, setNewUserPhotoUrl] = useState('');
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [profileName, setProfileName] = useState('');
+  const [profileEmail, setProfileEmail] = useState('');
+  const [profilePassword, setProfilePassword] = useState('');
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState('');
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [currentCrafterId, setCurrentCrafterId] = useState<string>('');
   const [newCrafterName, setNewCrafterName] = useState('');
+  const [newCrafterPhone, setNewCrafterPhone] = useState('');
+  const [newCrafterAddress, setNewCrafterAddress] = useState('');
   const [editOrderId, setEditOrderId] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -185,13 +282,15 @@ export default function App() {
 
   const fetchData = async () => {
     try {
-      const [craftersRes, ordersRes, customerOrdersRes, walletRes, invRes, expRes] = await Promise.all([
+      const [craftersRes, ordersRes, customerOrdersRes, walletRes, invRes, expRes, meRes, auditRes] = await Promise.all([
         fetch('/api/crafters'),
         fetch('/api/orders'),
         fetch('/api/customer-orders'),
         fetch('/api/wallet/transactions'),
         fetch('/api/inventory'),
-        fetch('/api/expenses')
+        fetch('/api/expenses'),
+        fetch('/api/me'),
+        fetch('/api/audit')
       ]);
 
       if (!craftersRes.ok) {
@@ -226,6 +325,19 @@ export default function App() {
       const invData = await invRes.json();
       const expData = await expRes.json();
 
+      if (meRes.ok) {
+        const meData = await meRes.json();
+        setCurrentUser(meData);
+        setProfileName(meData.name);
+        setProfileEmail(meData.email);
+        setProfilePhotoUrl(meData.profilePhotoUrl || '');
+      }
+
+      if (auditRes.ok) {
+        const auditData = await auditRes.json();
+        setAuditLogs(auditData);
+      }
+
       setCrafters(craftersData);
       setOrders(ordersData);
       setCustomerOrders(customerOrdersData);
@@ -242,8 +354,12 @@ export default function App() {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (isAuthenticated) {
+      fetchData();
+    } else {
+      setLoading(false);
+    }
+  }, [isAuthenticated]);
 
   const handleAddCrafter = async () => {
     if (!newCrafterName.trim()) return;
@@ -251,15 +367,24 @@ export default function App() {
       const res = await fetch('/api/crafters', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newCrafterName.trim(), hooks: 0 })
+        body: JSON.stringify({
+          name: newCrafterName.trim(),
+          phone: newCrafterPhone.trim(),
+          address: newCrafterAddress.trim(),
+          hooks: 0
+        })
       });
       const newCrafter = await res.json();
       setCrafters([...crafters, newCrafter]);
       setNewCrafterName('');
+      setNewCrafterPhone('');
+      setNewCrafterAddress('');
       setCurrentCrafterId(newCrafter._id);
       setActiveTab('crafters');
+      toast.success('Crafter added successfully!');
     } catch (err) {
       console.error('Failed to add crafter', err);
+      toast.error('Failed to add crafter.');
     }
   };
 
@@ -273,8 +398,10 @@ export default function App() {
           setCurrentCrafterId('');
           setActiveTab('admin');
         }
+        toast.success('Crafter deleted permanently.');
       } catch (err) {
         console.error('Failed to delete crafter', err);
+        toast.error('Failed to delete crafter portfolio.');
       }
     }
   };
@@ -286,7 +413,7 @@ export default function App() {
 
   // Admin / Dashboard Stats
   const totalRevenue = orders.reduce((sum, order) => sum + (order.completed ? order.sellingPrice : 0), 0) +
-                       customerOrders.filter(o => o.status === 'Completed').reduce((sum, o) => sum + o.totalAmount, 0); // Sales Tab revenue
+    customerOrders.filter(o => o.status === 'Completed').reduce((sum, o) => sum + o.totalAmount, 0); // Sales Tab revenue
 
   const totalLaborCost = orders.reduce((sum, order) => sum + (order.totalLabor || 0), 0);
   const totalMaterialCost = orders.reduce((sum, order) => sum + (order.materialCost || 0), 0);
@@ -296,19 +423,30 @@ export default function App() {
   // Wallet Shipping Deductions
   const totalShippingDeductions = walletTxns.filter(t => t.type === 'deduct_shipping').reduce((sum, t) => sum + t.amount, 0);
   const walletTotalAdded = walletTxns.filter(t => t.type === 'add_funds').reduce((sum, t) => sum + t.amount, 0);
+  const walletTotalDeducted = totalShippingDeductions;
+  const walletBalance = walletTotalAdded - walletTotalDeducted;
   const inventoryTotalCost = inventory.reduce((sum, inv) => sum + (inv.quantity * inv.costPerUnit), 0);
 
-  // Overall Business Net Profit
+  // --- Advanced Business Analytics (KPIs) ---
+  const completedOrders = orders.filter(o => o.completed).length + customerOrders.filter(o => o.status === 'Completed').length;
   const totalProfit = totalRevenue - totalLaborCost - totalMaterialCost - totalExpenses - totalShippingDeductions;
-
-  // Total Business Investment (Money tied up in inventory + wallet + all expenses & sunk costs)
-  const totalInvestment = totalLaborCost + totalMaterialCost + totalExpenses + walletTotalAdded + inventoryTotalCost;
+  const totalCosts = totalLaborCost + totalMaterialCost + totalExpenses + totalShippingDeductions;
   
-  // Growth / Return on Investment (ROI)
-  const roiPercentage = totalInvestment > 0 ? ((totalProfit / totalInvestment) * 100).toFixed(1) : '0.0';
+  // 1. Return on Investment (ROI): (Net Profit / Total Costs) * 100
+  const trueROI = totalCosts > 0 ? ((totalProfit / totalCosts) * 100).toFixed(1) : '0.0';
+  
+  // 2. Average Order Value (AOV): Total Sales Revenue / Completed Orders
+  const avgOrderValue = completedOrders > 0 ? (totalRevenue / completedOrders).toFixed(0) : '0';
+
+  // 3. Profit Margin: (Net Profit / Total Revenue) * 100
+  const netMargin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : '0.0';
+
+  // 4. Inventory Health: Percentage of items above threshold
+  const lowStockCount = inventory.filter(i => i.quantity <= (i.lowStockThreshold || 5)).length;
+  const inventoryHealth = inventory.length > 0 ? (((inventory.length - lowStockCount) / inventory.length) * 100).toFixed(0) : '100';
 
   const pendingOrders = orders.filter(o => !o.completed).length + customerOrders.filter(o => o.status === 'Pending').length;
-  const completedOrders = orders.filter(o => o.completed).length + customerOrders.filter(o => o.status === 'Completed').length;
+  const completedOrdersCount = completedOrders;
 
   const adminTotalHooks = crafters.reduce((sum, c) => sum + (c.hooks || 0), 0);
 
@@ -337,7 +475,7 @@ export default function App() {
     const monthKey = dateStr.substring(0, 7); // e.g., "2023-10"
     revenueByMonth.set(monthKey, (revenueByMonth.get(monthKey) || 0) + amount);
   };
-  
+
   orders.filter(o => o.completed).forEach(o => addRevenue(o.orderDate, o.revenue));
   customerOrders.filter(o => o.status === 'Completed').forEach(o => addRevenue(o.orderDate, o.totalAmount));
 
@@ -359,7 +497,7 @@ export default function App() {
   // 4. Customer Lifetime Value (CLV) Leaderboard
   const clvMap = new Map<string, number>();
   customerOrders.filter(o => o.status === 'Completed').forEach(o => {
-    const key = `${o.customerName}${o.customerPhone ? ' ('+o.customerPhone+')' : ''}`;
+    const key = `${o.customerName}${o.customerPhone ? ' (' + o.customerPhone + ')' : ''}`;
     clvMap.set(key, (clvMap.get(key) || 0) + o.totalAmount);
   });
   const clvData = Array.from(clvMap.entries())
@@ -384,27 +522,27 @@ export default function App() {
   let totalPendingStuffing = 0;
   orders.filter(o => !o.completed).forEach(o => {
     o.materialsObj?.yarns?.forEach(y => {
-      if(y.color && y.qty) {
+      if (y.color && y.qty) {
         const colorKey = y.color.toLowerCase();
         pendingYarnDemand.set(colorKey, (pendingYarnDemand.get(colorKey) || 0) + Number(y.qty));
       }
     });
-    if(o.materialsObj?.stuffing) {
-       totalPendingStuffing += Number(o.materialsObj.stuffing);
+    if (o.materialsObj?.stuffing) {
+      totalPendingStuffing += Number(o.materialsObj.stuffing);
     }
   });
 
   // Check inventory for warnings
   const inventoryWarnings: string[] = [];
   inventory.forEach(inv => {
-    if(inv.category.toLowerCase().includes('yarn')) {
+    if (inv.category.toLowerCase().includes('yarn')) {
       const demand = pendingYarnDemand.get(inv.name.toLowerCase()) || 0;
-      if(inv.quantity < demand) {
-         inventoryWarnings.push(`Shortage: Need ${demand}${inv.unit} of ${inv.name} for pending orders, but only ${inv.quantity}${inv.unit} in stock!`);
+      if (inv.quantity < demand) {
+        inventoryWarnings.push(`Shortage: Need ${demand}${inv.unit} of ${inv.name} for pending orders, but only ${inv.quantity}${inv.unit} in stock!`);
       }
-    } else if(inv.category.toLowerCase().includes('stuff')) {
-      if(inv.quantity < totalPendingStuffing) {
-         inventoryWarnings.push(`Shortage: Need ${totalPendingStuffing}${inv.unit} of Stuffing, but only ${inv.quantity}${inv.unit} in stock!`);
+    } else if (inv.category.toLowerCase().includes('stuff')) {
+      if (inv.quantity < totalPendingStuffing) {
+        inventoryWarnings.push(`Shortage: Need ${totalPendingStuffing}${inv.unit} of Stuffing, but only ${inv.quantity}${inv.unit} in stock!`);
       }
     }
   });
@@ -462,7 +600,8 @@ export default function App() {
       materialsObj: { yarns: yarns.filter(y => y.color.trim() || y.qty.trim()), stuffing, wire, eyes },
       qtyOrdered: qOrdered, qtyReceived: qReceived, timeTaken: timeTaken || 'Pending',
       materialCost: mCost, laborCost: lCost, sellingPrice: sPrice,
-      totalLabor, totalCost: totalCostToYou, revenue: totalRevenue, profit: netProfit
+      totalLabor, totalCost: totalCostToYou, revenue: totalRevenue, profit: netProfit,
+      completed: qReceived >= qOrdered && qOrdered > 0
     };
 
     try {
@@ -681,8 +820,6 @@ export default function App() {
   const salesTotalOrders = customerOrders.length;
 
   // Wallet Functions & Stats
-  const walletTotalDeducted = walletTxns.filter(t => t.type === 'deduct_shipping').reduce((sum, t) => sum + t.amount, 0);
-  const walletBalance = walletTotalAdded - walletTotalDeducted;
 
   const handleWalletSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -768,7 +905,7 @@ export default function App() {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(invData)
         });
         const saved = await res.json();
-        setInventory([...inventory, saved].sort((a,b) => a.category.localeCompare(b.category)));
+        setInventory([...inventory, saved].sort((a, b) => a.category.localeCompare(b.category)));
       }
       resetInventoryForm();
     } catch (err) { console.error('Failed to save inventory', err); }
@@ -813,7 +950,7 @@ export default function App() {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(expData)
         });
         const saved = await res.json();
-        setExpenses([saved, ...expenses].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        setExpenses([saved, ...expenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
       }
       resetExpenseForm();
     } catch (err) { console.error('Failed to save expense', err); }
@@ -843,12 +980,191 @@ export default function App() {
     toast.success('Shipping Label copied to clipboard!');
   };
 
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoggingIn(true);
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginEmail.toLowerCase(), password: loginPassword })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        localStorage.setItem('tb_admin_token', data.token);
+        setCurrentUser(data.user);
+        setIsAuthenticated(true);
+        setIsProfileDropdownOpen(false);
+        setIsProfileModalOpen(false);
+        toast.success(`Welcome back, ${data.user.name}!`);
+      } else {
+        const errData = await res.json();
+        toast.error(errData.error || 'Invalid credentials.');
+      }
+    } catch (err) {
+      toast.error('Failed to connect to server.');
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('tb_admin_token');
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+    setIsProfileDropdownOpen(false);
+    setIsProfileModalOpen(false);
+    toast.success('Logged out successfully.');
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, isNewUser: boolean = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check size (limit to 1MB to avoid DB bloat)
+    if (file.size > 1024 * 1024) {
+      toast.error('Image must be less than 1MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      if (isNewUser) {
+        setNewUserPhotoUrl(base64String);
+      } else {
+        setProfilePhotoUrl(base64String);
+      }
+      toast.success('Photo uploaded!');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUpdatingProfile(true);
+    try {
+      const payload: any = { name: profileName, email: profileEmail.toLowerCase(), profilePhotoUrl };
+      if (profilePassword) payload.password = profilePassword;
+
+      const res = await fetch('/api/me', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        const updated = await res.json();
+        setCurrentUser(updated);
+        setIsProfileModalOpen(false);
+        setProfilePassword('');
+        toast.success('Profile updated successfully!');
+      } else {
+        const errData = await res.json();
+        toast.error(errData.error || 'Failed to update profile.');
+      }
+    } catch (err) {
+      console.error('Profile Update Error:', err);
+      toast.error('Connection error.');
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsCreatingUser(true);
+    try {
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newUserName,
+          email: newUserEmail.toLowerCase(),
+          password: newUserPassword,
+          profilePhotoUrl: newUserPhotoUrl
+        })
+      });
+
+      if (res.ok) {
+        toast.success(`User ${newUserName} created!`);
+        setIsAddingUserModalOpen(false);
+        setNewUserName('');
+        setNewUserEmail('');
+        setNewUserPassword('');
+        setNewUserPhotoUrl('');
+      } else {
+        const data = await res.json();
+        toast.error(data.error || 'Failed to create user.');
+      }
+    } catch (err) {
+      console.error('User Creation Error:', err);
+      toast.error('Connection error.');
+    } finally {
+      setIsCreatingUser(false);
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-sky-50 flex items-center justify-center p-4">
+        <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full border border-sky-100"
+        >
+          <div className="flex justify-center mb-6">
+            <div className="bg-sky-500/20 p-4 rounded-2xl">
+              <YarnBall className="w-10 h-10 text-sky-500" />
+            </div>
+          </div>
+          <h2 className="text-3xl font-display font-black text-center text-sky-500 mb-2">Twisted Bliss</h2>
+          <p className="text-center text-slate-500 mb-8 text-sm">Access the secure admin gateway</p>
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-slate-600 mb-2">Admin Email</label>
+              <input
+                type="email"
+                required
+                placeholder="Enter your email..."
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 outline-none transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-600 mb-2">Password</label>
+              <input
+                type="password"
+                required
+                placeholder="Enter your password..."
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 outline-none transition-all"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={isLoggingIn}
+              className="w-full bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all disabled:opacity-50"
+            >
+              {isLoggingIn ? 'Authenticating...' : 'Unlock Gateway'}
+            </button>
+          </form>
+        </motion.div>
+      </div>
+    );
+  }
+
   if (loading) {
     return <div className="min-h-screen bg-pink-50 flex items-center justify-center text-sky-400 font-display text-3xl">Loading...</div>;
   }
 
   return (
     <div className="min-h-screen bg-pink-50 text-slate-900 font-sans pb-20">
+      <Toaster position="top-right" toastOptions={{ duration: 3000, style: { borderRadius: '1rem', background: '#fff', color: '#334155', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' } }} />
       {error && (
         <div className="bg-red-900/50 border-b border-red-500 text-red-200 p-4 text-center">
           {error}
@@ -856,105 +1172,203 @@ export default function App() {
       )}
 
       {/* Header */}
-      <header className="bg-white/90 backdrop-blur-md border-b border-sky-200 shadow-sm sticky top-0 z-10">
+      <header className="bg-white/90 backdrop-blur-md border-b border-sky-200 shadow-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex items-center gap-3"
+          >
             <div className="bg-sky-500/20 p-2.5 rounded-xl border border-sky-500/30">
               <YarnBall className="w-6 h-6 text-sky-500" />
             </div>
             <h1 className="text-3xl font-display font-black text-sky-500 tracking-wide" style={{ textShadow: '0 2px 10px rgba(14, 165, 233, 0.2)' }}>
               Twisted Bliss
             </h1>
-          </div>
+          </motion.div>
+
           <div className="flex gap-2 bg-sky-50 p-1 rounded-xl border border-sky-200">
-            <button
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setActiveTab('admin')}
               className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${activeTab === 'admin' ? 'bg-white text-slate-900 shadow-md' : 'text-slate-600 hover:text-sky-700 hover:bg-sky-100'}`}
             >
               <LayoutDashboard className="w-4 h-4" />
-              <span className="hidden sm:inline">Master Admin</span>
-            </button>
-            <button
+              <span className="hidden sm:inline">Insights</span>
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setActiveTab('crafters')}
               className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${activeTab === 'crafters' ? 'bg-white text-slate-900 shadow-md' : 'text-slate-600 hover:text-sky-700 hover:bg-sky-100'}`}
             >
-              <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">Portfolio View</span>
-            </button>
-            <button
+              <Factory className="w-4 h-4" />
+              <span className="hidden sm:inline">Production</span>
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setActiveTab('sales')}
               className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${activeTab === 'sales' ? 'bg-white text-slate-900 shadow-md' : 'text-slate-600 hover:text-sky-700 hover:bg-sky-100'}`}
             >
               <ShoppingBag className="w-4 h-4" />
-              <span className="hidden sm:inline">Sales Orders</span>
-            </button>
-            <button
+              <span className="hidden sm:inline">Order Desk</span>
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setActiveTab('wallet')}
               className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${activeTab === 'wallet' ? 'bg-white text-slate-900 shadow-md' : 'text-slate-600 hover:text-sky-700 hover:bg-sky-100'}`}
             >
-              <Wallet className="w-4 h-4" />
-              <span className="hidden sm:inline">Shipping Wallet</span>
-            </button>
-            <button
+              <Truck className="w-4 h-4" />
+              <span className="hidden sm:inline">Shipping</span>
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setActiveTab('inventory')}
               className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${activeTab === 'inventory' ? 'bg-white text-slate-900 shadow-md' : 'text-slate-600 hover:text-sky-700 hover:bg-sky-100'}`}
             >
               <Box className="w-4 h-4" />
               <span className="hidden sm:inline">Inventory</span>
-            </button>
-            <button
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setActiveTab('expenses')}
               className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${activeTab === 'expenses' ? 'bg-white text-slate-900 shadow-md' : 'text-slate-600 hover:text-sky-700 hover:bg-sky-100'}`}
             >
               <Receipt className="w-4 h-4" />
-              <span className="hidden sm:inline">Ledger</span>
-            </button>
+              <span className="hidden sm:inline">Expenses</span>
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setActiveTab('audit')}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${activeTab === 'audit' ? 'bg-white text-slate-900 shadow-md' : 'text-slate-600 hover:text-sky-700 hover:bg-sky-100'}`}
+            >
+              <History className="w-4 h-4" />
+              <span className="hidden sm:inline">Logs</span>
+            </motion.button>
+          </div>
+
+          <div className="flex items-center gap-4 relative">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+              className="w-10 h-10 rounded-full border-2 border-sky-200 overflow-hidden hover:border-sky-500 transition-all shadow-sm flex items-center justify-center bg-white"
+            >
+              {currentUser?.profilePhotoUrl ? (
+                <img src={currentUser.profilePhotoUrl} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-sky-100 flex items-center justify-center text-sky-600 font-bold uppercase">
+                  {currentUser?.name?.charAt(0) || 'A'}
+                </div>
+              )}
+            </motion.button>
+
+            <AnimatePresence>
+              {isProfileDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setIsProfileDropdownOpen(false)}></div>
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute right-0 top-14 w-48 bg-white rounded-2xl shadow-xl border border-sky-100 py-2 z-20 overflow-hidden"
+                  >
+                    <div className="px-4 py-2 border-b border-sky-50 mb-1">
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Signed in as</p>
+                      <p className="text-sm font-bold text-slate-700 truncate">{currentUser?.name}</p>
+                    </div>
+                    <button
+                      onClick={() => { setIsProfileModalOpen(true); setIsProfileDropdownOpen(false); }}
+                      className="w-full text-left px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-sky-50 hover:text-sky-600 transition-colors flex items-center gap-2"
+                    >
+                      <User className="w-4 h-4" /> Account Settings
+                    </button>
+                    <button
+                      onClick={() => { setIsAddingUserModalOpen(true); setIsProfileDropdownOpen(false); }}
+                      className="w-full text-left px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-sky-50 hover:text-sky-600 transition-colors flex items-center gap-2"
+                    >
+                      <UserPlus className="w-4 h-4" /> Add Admin User
+                    </button>
+                    <div className="border-t border-sky-50 mt-1">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-2.5 text-sm font-bold text-rose-500 hover:bg-rose-50 transition-colors flex items-center gap-2"
+                      >
+                        <X className="w-4 h-4" /> Logout
+                      </button>
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <motion.main
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8"
+      >
 
         {/* Admin Dashboard Tab */}
         {activeTab === 'admin' && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
             <div className="text-center mb-10">
-              <h2 className="text-4xl font-sans font-extrabold text-slate-800 mb-2">Master Admin Dashboard</h2>
-              <p className="text-slate-600">Overview of all operations, revenue, and costs across all crafters.</p>
+              <h2 className="text-4xl font-sans font-extrabold text-slate-800 mb-2">Command Center Insights</h2>              <p className="text-slate-600">Overview of all operations, revenue, and costs across all crafters.</p>
             </div>
 
-            {/* Hero ROI / Investment KPI Banner */}
-            <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500 rounded-full blur-3xl opacity-20 -mr-20 -mt-20"></div>
-              <div className="absolute bottom-0 left-0 w-64 h-64 bg-sky-500 rounded-full blur-3xl opacity-20 -ml-20 -mb-20"></div>
+            {/* Command Center KPI Banner */}
+            <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500 rounded-full blur-[120px] opacity-20 -mr-20 -mt-20"></div>
+              <div className="absolute bottom-0 left-0 w-80 h-80 bg-sky-500 rounded-full blur-[120px] opacity-20 -ml-20 -mb-20"></div>
               
-              <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="border-b md:border-b-0 md:border-r border-slate-700 pb-6 md:pb-0 px-4">
-                  <p className="text-slate-400 font-semibold mb-2 uppercase tracking-widest text-xs flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-emerald-400" /> ROI & Growth
+              <div className="relative z-10 grid grid-cols-1 md:grid-cols-4 gap-8 text-center md:text-left">
+                <div className="border-b md:border-b-0 md:border-r border-slate-700/50 pb-6 md:pb-0 px-4">
+                  <p className="text-slate-400 font-semibold mb-3 uppercase tracking-widest text-[10px] flex items-center justify-center md:justify-start gap-2">
+                    <Target className="w-3 h-3 text-emerald-400" /> Net Margin
                   </p>
-                  <p className="text-5xl font-display font-black text-white flex items-baseline gap-2">
-                    {Number(roiPercentage) >= 0 ? '+' : ''}{roiPercentage}%
-                    <span className="text-sm font-medium text-emerald-400 align-middle bg-emerald-400/10 px-2 py-1 rounded-md">Growth</span>
+                  <p className="text-4xl font-display font-black text-white flex items-baseline justify-center md:justify-start gap-2">
+                    {netMargin}%
+                    <span className="text-[10px] font-bold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">Yield</span>
                   </p>
                 </div>
-                <div className="border-b md:border-b-0 md:border-r border-slate-700 pb-6 md:pb-0 px-4">
-                  <p className="text-slate-400 font-semibold mb-2 uppercase tracking-widest text-xs flex items-center gap-2">
-                    <Wallet className="w-4 h-4 text-sky-400" /> Total Investment
+
+                <div className="border-b md:border-b-0 md:border-r border-slate-700/50 pb-6 md:pb-0 px-4">
+                  <p className="text-slate-400 font-semibold mb-3 uppercase tracking-widest text-[10px] flex items-center justify-center md:justify-start gap-2">
+                    <ShoppingBag className="w-3 h-3 text-sky-400" /> Avg Order Value
                   </p>
-                  <p className="text-4xl font-bold text-slate-100">
-                    ₹{totalInvestment.toFixed(2)}
+                  <p className="text-4xl font-display font-black text-white flex items-baseline justify-center md:justify-start gap-2">
+                    ₹{avgOrderValue}
+                    <span className="text-[10px] font-bold text-sky-400 bg-sky-400/10 px-2 py-0.5 rounded-full">Ticket</span>
                   </p>
-                  <p className="text-xs text-slate-500 mt-2">Capital wrapped in inventory, wallet, and labor.</p>
                 </div>
-                <div className="px-4">
-                  <p className="text-slate-400 font-semibold mb-2 uppercase tracking-widest text-xs flex items-center gap-2">
-                    <IndianRupee className="w-4 h-4 text-emerald-400" /> Total Net Profit
+
+                <div className="border-b md:border-b-0 md:border-r border-slate-700/50 pb-6 md:pb-0 px-4">
+                  <p className="text-slate-400 font-semibold mb-3 uppercase tracking-widest text-[10px] flex items-center justify-center md:justify-start gap-2">
+                    <ArrowUpRight className="w-3 h-3 text-indigo-400" /> True ROI
                   </p>
-                  <p className={`text-4xl font-bold ${totalProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    {totalProfit >= 0 ? '+' : '-'}₹{Math.abs(totalProfit).toFixed(2)}
+                  <p className="text-4xl font-display font-black text-white flex items-baseline justify-center md:justify-start gap-2">
+                    {trueROI}%
+                    <span className="text-[10px] font-bold text-indigo-400 bg-indigo-400/10 px-2 py-0.5 rounded-full">Growth</span>
                   </p>
-                  <p className="text-xs text-slate-500 mt-2">True profit after deduicting all expenses.</p>
+                </div>
+
+                <div className="pb-6 md:pb-0 px-4">
+                  <p className="text-slate-400 font-semibold mb-3 uppercase tracking-widest text-[10px] flex items-center justify-center md:justify-start gap-2">
+                    <Box className="w-3 h-3 text-amber-400" /> Stock Health
+                  </p>
+                  <p className="text-4xl font-display font-black text-white flex items-baseline justify-center md:justify-start gap-2">
+                    {inventoryHealth}%
+                    <span className="text-[10px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full">Supply</span>
+                  </p>
                 </div>
               </div>
             </div>
@@ -1139,8 +1553,18 @@ export default function App() {
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
             <div className="flex justify-between items-end mb-10">
               <div>
-                <h2 className="text-4xl font-sans font-extrabold text-slate-800 mb-2">Crafters Hub</h2>
+                <h2 className="text-4xl font-sans font-extrabold text-slate-800 mb-2">Production Hub</h2>
                 <p className="text-slate-600">Manage production orders and material costs.</p>
+              </div>
+              <div className="flex gap-4">
+                <div className="bg-white px-4 py-2 rounded-2xl border border-sky-100 shadow-sm">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active Hooks</p>
+                  <p className="text-xl font-black text-sky-600">{adminTotalHooks}</p>
+                </div>
+                <div className="bg-white px-4 py-2 rounded-2xl border border-sky-100 shadow-sm">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Open Tasks</p>
+                  <p className="text-xl font-black text-indigo-600">{orders.filter(o => !o.completed).length}</p>
+                </div>
               </div>
             </div>
 
@@ -1158,7 +1582,7 @@ export default function App() {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="px-4 py-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-700"
               >
-                <option value="All">All Statuses</option>
+                <option value="All">All Status</option>
                 <option value="Active">Active</option>
                 <option value="Completed">Completed</option>
               </select>
@@ -1185,41 +1609,65 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 w-full md:w-auto">
-                  <div className="flex-1 md:w-64">
+                <div className="flex flex-col md:flex-row items-end gap-3 w-full md:w-auto">
+                  <div className="flex-1 md:w-48">
                     <label className="block text-sm font-semibold text-slate-600 mb-2 uppercase tracking-wider">New Lady</label>
                     <input
                       type="text"
                       placeholder="Name..."
-                      className="w-full px-4 py-3 bg-white border border-sky-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-slate-800 transition-colors"
+                      className="w-full px-4 py-3 bg-white border border-sky-200 rounded-lg focus:ring-2 focus:ring-sky-500 text-slate-800"
                       value={newCrafterName}
                       onChange={(e) => setNewCrafterName(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex-1 md:w-40">
+                    <label className="block text-sm font-semibold text-slate-600 mb-2 uppercase tracking-wider">Phone</label>
+                    <input
+                      type="text"
+                      placeholder="Phone..."
+                      className="w-full px-4 py-3 bg-white border border-sky-200 rounded-lg focus:ring-2 focus:ring-sky-500 text-slate-800"
+                      value={newCrafterPhone}
+                      onChange={(e) => setNewCrafterPhone(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex-1 md:w-64">
+                    <label className="block text-sm font-semibold text-slate-600 mb-2 uppercase tracking-wider">Address</label>
+                    <input
+                      type="text"
+                      placeholder="Address..."
+                      className="w-full px-4 py-3 bg-white border border-sky-200 rounded-lg focus:ring-2 focus:ring-sky-500 text-slate-800"
+                      value={newCrafterAddress}
+                      onChange={(e) => setNewCrafterAddress(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleAddCrafter()}
                     />
                   </div>
                   <button
                     onClick={handleAddCrafter}
                     disabled={!newCrafterName.trim()}
-                    className="mt-7 px-5 py-3 bg-white hover:bg-slate-100 disabled:bg-slate-200 disabled:text-slate-400 text-slate-900 rounded-lg font-semibold transition-all flex items-center gap-2 uppercase tracking-wider text-sm shadow-sm border border-slate-200"
+                    className="px-5 py-3 bg-white hover:bg-slate-100 disabled:bg-slate-200 disabled:text-slate-400 text-slate-900 rounded-lg font-semibold transition-all flex items-center gap-2 uppercase tracking-wider text-sm shadow-sm border border-slate-200 h-[50px]"
                   >
                     <UserPlus className="w-4 h-4" />
                     <span className="hidden sm:inline">Add</span>
                   </button>
-                </div>
-              </div>
+                </div>              </div>
             </section>
 
             {currentCrafter && (
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-3xl border border-sky-200 shadow-sm">
-                  <h2 className="text-3xl font-display font-bold text-indigo-600 flex items-center gap-3">
-                    <User className="w-8 h-8 text-indigo-500" /> {currentCrafter.name}'s Portfolio
-                  </h2>
+                  <div className="space-y-1">
+                    <h2 className="text-3xl font-display font-bold text-indigo-600 flex items-center gap-3">
+                      <User className="w-8 h-8 text-indigo-500" /> {currentCrafter.name}'s Portfolio
+                    </h2>
+                    <div className="flex flex-wrap gap-4 text-sm text-slate-500 font-medium ml-11">
+                      {currentCrafter.phone && <span className="flex items-center gap-1">📞 {currentCrafter.phone}</span>}
+                      {currentCrafter.address && <span className="flex items-center gap-1">📍 {currentCrafter.address}</span>}
+                    </div>
+                  </div>
                   <button
                     onClick={() => handleDeleteCrafter(currentCrafter._id!)}
                     className="px-4 py-2 bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-600 hover:text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-2 uppercase tracking-wider"
-                  >
-                    <Trash2 className="w-4 h-4" /> Delete Lady
+                  >                    <Trash2 className="w-4 h-4" /> Delete Lady
                   </button>
                 </div>
 
@@ -1244,16 +1692,24 @@ export default function App() {
 
                 <div className="flex justify-between items-center">
                   <h3 className="text-2xl font-display font-bold text-sky-600">Order History</h3>
-                  <button
-                    onClick={() => {
-                      if (isFormOpen && editOrderId) resetForm();
-                      setIsFormOpen(!isFormOpen);
-                    }}
-                    className="px-5 py-2.5 bg-white hover:bg-slate-100 text-slate-900 rounded-lg font-semibold transition-all flex items-center gap-2 uppercase tracking-wider text-sm shadow-sm border border-slate-200"
-                  >
-                    {isFormOpen ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                    {isFormOpen ? 'Close Form' : 'Add Order'}
-                  </button>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => exportToCSV(orders.filter(o => o.crafterId === currentCrafter._id), `${currentCrafter.name}_Orders`)}
+                      className="px-5 py-2.5 bg-sky-50 hover:bg-sky-100 text-sky-700 rounded-lg font-semibold transition-all flex items-center gap-2 uppercase tracking-wider text-sm shadow-sm border border-sky-200"
+                    >
+                      Export CSV
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (isFormOpen && editOrderId) resetForm();
+                        setIsFormOpen(!isFormOpen);
+                      }}
+                      className="px-5 py-2.5 bg-white hover:bg-slate-100 text-slate-900 rounded-lg font-semibold transition-all flex items-center gap-2 uppercase tracking-wider text-sm shadow-sm border border-slate-200"
+                    >
+                      {isFormOpen ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                      {isFormOpen ? 'Close Form' : 'Add Order'}
+                    </button>
+                  </div>
                 </div>
 
                 <AnimatePresence>
@@ -1415,22 +1871,22 @@ export default function App() {
                                   {order.completed ? <CheckCircle className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
                                 </button>
                               </td>
-                            <td className="px-4 py-4 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <button onClick={() => handleEdit(order)} className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors" title="Edit">
-                                  <Edit2 className="w-4 h-4" />
-                                </button>
-                                <button onClick={() => handleDelete(order._id!)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-100 rounded-lg transition-colors" title="Delete">
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                              <td className="px-4 py-4 text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  <button onClick={() => handleEdit(order)} className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors" title="Edit">
+                                    <Edit2 className="w-4 h-4" />
+                                  </button>
+                                  <button onClick={() => handleDelete(order._id!)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-100 rounded-lg transition-colors" title="Delete">
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </motion.div>
             )}
 
@@ -1461,16 +1917,36 @@ export default function App() {
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
             <div className="flex justify-between items-end mb-10">
               <div>
-                <h2 className="text-4xl font-sans font-extrabold text-slate-800 mb-2">Customer Sales Dashboard</h2>
+                <h2 className="text-4xl font-sans font-extrabold text-slate-800 mb-2">Order Desk</h2>
                 <p className="text-slate-600">Manage incoming customer orders, track payments, and extra shipping costs.</p>
               </div>
-              <button
-                onClick={() => { resetSalesForm(); setIsSalesFormOpen(!isSalesFormOpen); }}
-                className="px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold transition-all shadow-lg hover:shadow-xl flex items-center gap-2 uppercase tracking-wider text-sm"
-              >
-                {isSalesFormOpen ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-                {isSalesFormOpen ? 'Cancel' : 'New  Customer Order'}
-              </button>
+              <div className="flex gap-4">
+                <div className="bg-white px-4 py-2 rounded-2xl border border-amber-100 shadow-sm">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pending Revenue</p>
+                  <p className="text-xl font-black text-amber-600">
+                    ₹{customerOrders.filter(o => o.status === 'Pending').reduce((sum, o) => sum + o.totalAmount, 0).toFixed(0)}
+                  </p>
+                </div>
+                <div className="bg-white px-4 py-2 rounded-2xl border border-amber-100 shadow-sm text-center">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Unfulfilled</p>
+                  <p className="text-xl font-black text-amber-700">{customerOrders.filter(o => o.status === 'Pending').length}</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => exportToCSV(customerOrders, 'Sales_Orders_Export')}
+                  className="px-6 py-3 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl font-bold transition-all shadow-sm flex items-center gap-2 uppercase tracking-wider text-sm"
+                >
+                  Export CSV
+                </button>
+                <button
+                  onClick={() => { resetSalesForm(); setIsSalesFormOpen(!isSalesFormOpen); }}
+                  className="px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold transition-all shadow-lg hover:shadow-xl flex items-center gap-2 uppercase tracking-wider text-sm"
+                >
+                  {isSalesFormOpen ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+                  {isSalesFormOpen ? 'Cancel' : 'New  Customer Order'}
+                </button>
+              </div>
             </div>
 
             {/* UX Controls */}
@@ -1487,7 +1963,7 @@ export default function App() {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="px-4 py-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-700"
               >
-                <option value="All">All Statuses</option>
+                <option value="All">All Status</option>
                 <option value="Pending">Pending</option>
                 <option value="Completed">Completed</option>
                 <option value="Cancelled">Cancelled</option>
@@ -1532,8 +2008,40 @@ export default function App() {
                         <div className="space-y-3 mb-5">
                           {products.map((p, idx) => (
                             <div key={idx} className="flex gap-3 items-center flex-wrap sm:flex-nowrap">
-                              <input type="text" required placeholder="Product Name" value={p.name} onChange={e => updateSaleProduct(idx, 'name', e.target.value)} className="w-full sm:flex-2 px-4 py-2.5 bg-white border border-amber-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-slate-800" />
-                              <div className="flex items-center gap-2 w-full sm:w-auto">
+                              <div className="flex-1 min-w-[200px] relative">
+                                <input 
+                                  type="text" 
+                                  list="inventory-finished-goods"
+                                  required 
+                                  placeholder="Product Name (e.g. Toy, Flower)" 
+                                  value={p.name} 
+                                  onChange={e => updateSaleProduct(idx, 'name', e.target.value)} 
+                                  className="w-full px-4 py-2.5 bg-white border border-amber-200 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-800" 
+                                />
+                                <datalist id="inventory-finished-goods">
+                                  {inventory
+                                    .filter(item => item.category === 'Finished Goods')
+                                    .map((item, i) => (
+                                      <option key={i} value={item.name}>{item.quantity} in stock - ₹{item.costPerUnit}</option>
+                                    ))
+                                  }
+                                </datalist>
+                                {p.name && !inventory.some(inv => inv.name.toLowerCase() === p.name.toLowerCase()) && (
+                                  <button 
+                                    type="button" 
+                                    onClick={() => {
+                                      setInvName(p.name);
+                                      setInvCategory('Finished Goods');
+                                      setActiveTab('inventory');
+                                      setIsInventoryFormOpen(true);
+                                      toast.success(`Redirecting to Inventory to add "${p.name}"`);
+                                    }}
+                                    className="absolute -top-2 -right-2 bg-amber-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-sm hover:bg-amber-600"
+                                  >
+                                    + Stock
+                                  </button>
+                                )}
+                              </div>                              <div className="flex items-center gap-2 w-full sm:w-auto">
                                 <span className="font-semibold text-slate-500">₹</span>
                                 <input type="number" required min="0" step="0.01" placeholder="Price" value={p.price || ''} onChange={e => updateSaleProduct(idx, 'price', Number(e.target.value))} className="w-full sm:w-28 px-4 py-2.5 bg-white border border-amber-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-slate-800" />
                               </div>
@@ -1610,8 +2118,8 @@ export default function App() {
                           if (!globalSearch) return true;
                           const s = globalSearch.toLowerCase();
                           return o.customerName.toLowerCase().includes(s) ||
-                                 (o.customerPhone && o.customerPhone.includes(s)) ||
-                                 o.products.some(p => p.name.toLowerCase().includes(s));
+                            (o.customerPhone && o.customerPhone.includes(s)) ||
+                            o.products.some(p => p.name.toLowerCase().includes(s));
                         })
                         .map((order, index) => (
                           <tr key={order._id || index} className="hover:bg-amber-50 transition-colors group">
@@ -1638,9 +2146,9 @@ export default function App() {
                               <button
                                 onClick={() => toggleSalesOrderStatus(order)}
                                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${order.status === 'Completed'
-                                    ? 'bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200'
-                                    : order.status === 'Cancelled' ? 'bg-rose-100 text-rose-700 border border-rose-200 hover:bg-rose-200'
-                                      : 'bg-amber-100 text-amber-700 border border-amber-200 hover:bg-amber-200'
+                                  ? 'bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200'
+                                  : order.status === 'Cancelled' ? 'bg-rose-100 text-rose-700 border border-rose-200 hover:bg-rose-200'
+                                    : 'bg-amber-100 text-amber-700 border border-amber-200 hover:bg-amber-200'
                                   }`}
                               >
                                 {order.status === 'Completed' ? <CheckCircle className="w-3.5 h-3.5" /> : <Circle className="w-3.5 h-3.5" />}
@@ -1687,7 +2195,7 @@ export default function App() {
         {activeTab === 'wallet' && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
             <div className="text-center mb-10">
-              <h2 className="text-4xl font-sans font-extrabold text-slate-800 mb-2">Shipping Aggregator Wallet</h2>
+              <h2 className="text-4xl font-sans font-extrabold text-slate-800 mb-2">Shipping Logistics</h2>
               <p className="text-slate-600">Track funds added to services like Shiprocket or Shipmozo, and monitor deductions.</p>
             </div>
 
@@ -1817,8 +2325,18 @@ export default function App() {
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
             <div className="flex justify-between items-end mb-10">
               <div>
-                <h2 className="text-4xl font-sans font-extrabold text-slate-800 mb-2">Inventory Management</h2>
+                <h2 className="text-4xl font-sans font-extrabold text-slate-800 mb-2">Inventory Lab</h2>
                 <p className="text-slate-600">Track yarns, materials, and packaging stock automatically.</p>
+              </div>
+              <div className="flex gap-4">
+                <div className="bg-white px-4 py-2 rounded-2xl border border-indigo-100 shadow-sm">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Asset Value</p>
+                  <p className="text-xl font-black text-indigo-600">₹{inventoryTotalCost.toFixed(0)}</p>
+                </div>
+                <div className="bg-rose-50 px-4 py-2 rounded-2xl border border-rose-100 shadow-sm text-center">
+                  <p className="text-[10px] font-bold text-rose-400 uppercase tracking-wider">Critical Stock</p>
+                  <p className="text-xl font-black text-rose-600">{lowStockCount}</p>
+                </div>
               </div>
               <button
                 onClick={() => { resetInventoryForm(); setIsInventoryFormOpen(!isInventoryFormOpen); }}
@@ -1868,6 +2386,7 @@ export default function App() {
                             <option value="Stuffing">Stuffing</option>
                             <option value="Packaging">Packaging</option>
                             <option value="Accessory">Accessory (Eyes, Wires)</option>
+                            <option value="Finished Goods">Finished Goods (Sellable)</option>
                           </select>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
@@ -1937,12 +2456,12 @@ export default function App() {
                             <td className="px-6 py-5 font-medium text-slate-600">₹{item.costPerUnit.toFixed(2)}</td>
                             <td className="px-6 py-5 text-center">
                               {isLow ? (
-                                <span className="inline-flex px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700 border border-rose-200 shadow-sm animate-pulse">
-                                  Low Stock
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black bg-rose-500 text-white shadow-md animate-pulse">
+                                  <AlertTriangle className="w-3 h-3" /> LOW STOCK
                                 </span>
                               ) : (
-                                <span className="inline-flex px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">
-                                  Healthy
+                                <span className="inline-flex items-center gap-1.5 px-1.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-700">
+                                  <CheckCircle className="w-3 h-3" /> OPTIMAL
                                 </span>
                               )}
                             </td>
@@ -1972,8 +2491,18 @@ export default function App() {
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
             <div className="flex justify-between items-end mb-10">
               <div>
-                <h2 className="text-4xl font-sans font-extrabold text-slate-800 mb-2">Business Expense Ledger</h2>
+                <h2 className="text-4xl font-sans font-extrabold text-slate-800 mb-2">Expense Vault</h2>
                 <p className="text-slate-600">Track structural and miscellaneous costs (web hosting, packaging, ads, etc).</p>
+              </div>
+              <div className="flex gap-4">
+                <div className="bg-white px-4 py-2 rounded-2xl border border-rose-100 shadow-sm">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Burn</p>
+                  <p className="text-xl font-black text-rose-600">₹{totalExpenses.toFixed(0)}</p>
+                </div>
+                <div className="bg-white px-4 py-2 rounded-2xl border border-rose-100 shadow-sm">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Categories</p>
+                  <p className="text-xl font-black text-slate-700">{new Set(expenses.map(e => e.category)).size}</p>
+                </div>
               </div>
               <button
                 onClick={() => { resetExpenseForm(); setIsExpenseFormOpen(!isExpenseFormOpen); }}
@@ -2076,8 +2605,248 @@ export default function App() {
             </div>
           </motion.div>
         )}
-      </main>
-      <Toaster position="bottom-right" />
+
+        {/* Audit Logs Tab */}
+        {activeTab === 'audit' && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
+            <div className="mb-10">
+              <h2 className="text-4xl font-sans font-extrabold text-slate-800 mb-2">System Audit Logs</h2>              <p className="text-slate-600">Review all administrative actions performed across the system.</p>
+            </div>
+
+            <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm text-slate-700">
+                  <thead className="bg-slate-50 text-slate-600 font-semibold uppercase tracking-wider text-xs">
+                    <tr>
+                      <th className="px-6 py-4">Timestamp</th>
+                      <th className="px-6 py-4">User</th>
+                      <th className="px-6 py-4">Action</th>
+                      <th className="px-6 py-4">Details</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {auditLogs.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-12 text-center text-slate-500">
+                          No activity logs found yet.
+                        </td>
+                      </tr>
+                    ) : (
+                      auditLogs.map((log, index) => (
+                        <tr key={log._id || index} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-6 py-5 whitespace-nowrap text-slate-500 text-xs">
+                            {new Date(log.timestamp).toLocaleString()}
+                          </td>
+                          <td className="px-6 py-5">
+                            <div className="font-bold text-slate-800">{log.userName}</div>
+                          </td>
+                          <td className="px-6 py-5">
+                            <span className="inline-flex px-2 py-1 rounded-full text-xs font-bold bg-sky-100 text-sky-700">
+                              {log.action}
+                            </span>
+                          </td>
+                          <td className="px-6 py-5 text-slate-600 italic">
+                            {log.details || '-'}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </motion.main>
+
+      {/* Profile Settings Modal */}
+      <AnimatePresence>
+        {isProfileModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-sky-100 overflow-hidden"
+            >
+              <div className="bg-sky-500 p-6 text-white flex justify-between items-center">
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                  <User className="w-6 h-6" /> Profile Settings
+                </h3>
+                <button onClick={() => setIsProfileModalOpen(false)} className="hover:bg-white/20 p-1 rounded-full transition-colors">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <form onSubmit={handleUpdateProfile} className="p-8 space-y-6">
+                <div className="flex justify-center mb-4">
+                  <div className="relative group">
+                    <div className="w-24 h-24 rounded-full border-4 border-sky-100 overflow-hidden shadow-inner">
+                      {profilePhotoUrl ? (
+                        <img src={profilePhotoUrl} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-sky-50 flex items-center justify-center text-sky-300 font-bold text-3xl">
+                          {profileName?.charAt(0) || 'A'}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-600 mb-1">Full Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={profileName}
+                      onChange={e => setProfileName(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-600 mb-1">Email Address</label>
+                    <input
+                      type="email"
+                      required
+                      value={profileEmail}
+                      onChange={e => setProfileEmail(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-600 mb-1">Profile Photo</label>
+                    <div className="flex gap-4 items-center">
+                      <div className="flex-1">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleFileUpload(e, false)}
+                          className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100 transition-all cursor-pointer"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setProfilePhotoUrl('')}
+                        className="text-xs text-rose-500 hover:text-rose-600 font-bold"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                  <div className="pt-2 border-t border-slate-100">
+                    <label className="block text-sm font-semibold text-slate-600 mb-1">New Password (optional)</label>
+                    <input
+                      type="password"
+                      placeholder="Leave blank to keep current"
+                      value={profilePassword}
+                      onChange={e => setProfilePassword(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsProfileModalOpen(false)}
+                    className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isUpdatingProfile}
+                    className="flex-1 py-3 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-xl shadow-md transition-all disabled:opacity-50"
+                  >
+                    {isUpdatingProfile ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Add Admin User Modal */}
+        {isAddingUserModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-sky-100 overflow-hidden"
+            >
+              <div className="bg-sky-500 p-6 text-white flex justify-between items-center">
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                  <UserPlus className="w-6 h-6" /> Add New Admin
+                </h3>
+                <button onClick={() => setIsAddingUserModalOpen(false)} className="hover:bg-white/20 p-1 rounded-full transition-colors">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateUser} className="p-8 space-y-5">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-600 mb-2">Full Name</label>
+                  <input
+                    type="text" required value={newUserName} onChange={(e) => setNewUserName(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 outline-none"
+                    placeholder="John Doe"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-600 mb-2">Email Address</label>
+                  <input
+                    type="email" required value={newUserEmail} onChange={(e) => setNewUserEmail(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 outline-none"
+                    placeholder="john@example.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-600 mb-2">Initial Password</label>
+                  <input
+                    type="password" required value={newUserPassword} onChange={(e) => setNewUserPassword(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 outline-none"
+                    placeholder="••••••••"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-600 mb-2">Profile Photo (Optional)</label>
+                  <div className="flex items-center gap-4 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div className="w-12 h-12 rounded-full overflow-hidden bg-sky-100 flex-shrink-0 border border-sky-200">
+                      {newUserPhotoUrl ? (
+                        <img src={newUserPhotoUrl} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="w-full h-full p-2 text-sky-300" />
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleFileUpload(e, true)}
+                      className="text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100 transition-all cursor-pointer"
+                    />
+                  </div>
+                </div>
+                <div className="pt-4 flex gap-3">
+                  <button
+                    type="button" onClick={() => setIsAddingUserModalOpen(false)}
+                    className="flex-1 py-3 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit" disabled={isCreatingUser}
+                    className="flex-1 py-3 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-xl shadow-md transition-all disabled:opacity-50"
+                  >
+                    {isCreatingUser ? 'Creating...' : 'Create User'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

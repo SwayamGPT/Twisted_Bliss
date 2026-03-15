@@ -41,3 +41,5 @@ coverage/
 # Brain metadata
 .gemini/
 brain/
+
+acc_creation.md
