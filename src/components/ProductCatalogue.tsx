@@ -178,7 +178,7 @@ export default function App() {
                     name: item.name,
                     description: `Category: ${item.category} | Stock: ${item.quantity} ${item.unit}`,
                     // Provide a charming subtle generic image for newly added un-imaged inventory items
-                    image: 'https://i.postimg.cc/85zKbs3F/Gemini-Generated-Image-4b0p9x4b0p9x4b0p.png', 
+                    image: 'https://i.postimg.cc/85zKbs3F/Gemini-Generated-Image-4b0p9x4b0p9x4b0p.png',
                     sku: `DYN-${item._id.substring(item._id.length - 4).toUpperCase()}`,
                     retailPrice: item.costPerUnit || 0,
                     priceMoq10: Math.round((item.costPerUnit || 0) * 0.9),
@@ -220,7 +220,7 @@ export default function App() {
                             </div>
                             <div className="flex items-center gap-2">
                                 <Mail className="w-4 h-4" />
-                                <span>twistedbliss0105@gmail.com</span>
+                                <span>support@twistedbliss.in</span>
                             </div>
                         </div>
                     </div>
