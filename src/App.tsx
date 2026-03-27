@@ -216,6 +216,7 @@ export default function App() {
             netMargin={d.netMargin} avgOrderValue={d.avgOrderValue} trueROI={d.trueROI} inventoryHealth={d.inventoryHealth}
             totalRevenue={d.totalRevenue} totalExpenses={d.totalExpenses} totalShippingDeductions={d.totalShippingDeductions}
             totalMaterialCost={d.totalMaterialCost} totalLaborCost={d.totalLaborCost} adminTotalHooks={d.adminTotalHooks}
+            inventoryTotalCost={d.inventoryTotalCost}
             orders={d.orders} customerOrders={d.customerOrders} crafters={d.crafters}
             bestSellersData={d.bestSellersData} COLORS={d.COLORS} monthlyTrendData={d.monthlyTrendData} clvData={d.clvData}
             avgFulfillmentTime={d.avgFulfillmentTime}

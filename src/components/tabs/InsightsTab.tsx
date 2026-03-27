@@ -21,6 +21,7 @@ interface InsightsTabProps {
   totalMaterialCost: number;
   totalLaborCost: number;
   adminTotalHooks: number;
+  inventoryTotalCost: number;
   orders: Order[];
   customerOrders: CustomerOrder[];
   crafters: Crafter[];
@@ -34,7 +35,7 @@ interface InsightsTabProps {
 export const InsightsTab: React.FC<InsightsTabProps> = ({
   netMargin, avgOrderValue, trueROI, inventoryHealth,
   totalRevenue, totalExpenses, totalShippingDeductions,
-  totalMaterialCost, totalLaborCost, adminTotalHooks,
+  totalMaterialCost, totalLaborCost, adminTotalHooks, inventoryTotalCost,
   orders, customerOrders, crafters,
   bestSellersData, COLORS, monthlyTrendData, clvData, avgFulfillmentTime
 }) => {
@@ -93,11 +94,12 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <StatCard title="Total Revenue" value={`₹${totalRevenue.toFixed(0)}`} icon={IndianRupee} color="text-sky-600" bgColor="bg-sky-400/20" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
+        <StatCard title="Realized Revenue" value={`₹${totalRevenue.toFixed(0)}`} icon={IndianRupee} color="text-sky-600" bgColor="bg-sky-400/20" />
         <StatCard title="Expenses" value={`₹${(totalExpenses + totalShippingDeductions).toFixed(0)}`} icon={Receipt} color="text-rose-600" bgColor="bg-rose-400/20" />
         <StatCard title="Material Cost" value={`₹${totalMaterialCost.toFixed(0)}`} icon={Package} color="text-amber-600" bgColor="bg-amber-400/20" />
         <StatCard title="Labor Cost" value={`₹${totalLaborCost.toFixed(0)}`} icon={Users} color="text-indigo-600" bgColor="bg-indigo-400/20" />
+        <StatCard title="Unsold Asset Value" value={`₹${inventoryTotalCost.toFixed(0)}`} icon={Box} color="text-fuchsia-600" bgColor="bg-fuchsia-400/20" />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">

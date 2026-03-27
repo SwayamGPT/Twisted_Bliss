@@ -847,8 +847,7 @@ export const useData = () => {
 
 
   // Calculations for KPI
-  const totalRevenue = orders.reduce((sum, o) => sum + (o.completed ? o.revenue : 0), 0) +
-    customerOrders.filter(o => o.status === 'Completed').reduce((sum, o) => sum + o.totalAmount, 0);
+  const totalRevenue = customerOrders.filter(o => o.status === 'Completed').reduce((sum, o) => sum + o.totalAmount, 0);
   const totalLaborCost = orders.reduce((sum, o) => sum + (o.totalLabor || 0), 0);
   const totalMaterialCost = orders.reduce((sum, o) => sum + (o.materialCost || 0), 0);
   const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
