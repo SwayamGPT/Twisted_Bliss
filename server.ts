@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-import { InventoryItem } from './backend/models/index.js';
+import { Catalogue } from './backend/models/index.js';
 
 // Health Check (Public)
 app.get('/api/health', (req, res) => {
@@ -23,7 +23,7 @@ app.get('/api/health', (req, res) => {
 // Public Catalogue Items
 app.get('/api/public/catalogue', async (req, res) => {
   try {
-    const items = await InventoryItem.find({ category: 'Finished Goods' });
+    const items = await Catalogue.find({});
     res.json(items);
   } catch (err) {
     console.error('Failed to fetch public catalogue', err);

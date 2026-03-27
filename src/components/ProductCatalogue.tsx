@@ -21,75 +21,7 @@ export interface Product {
     priceMoq50Plus: number;
 }
 
-// --- Mock Data ---
-const MOCK_PRODUCTS: Product[] = [
-    {
-        id: '1',
-        name: 'Sunflower Stick',
-        description: 'Beautiful crochet sunflower stick with vibrant yellow petals. Ships in 5-7 business days.',
-        image: 'https://i.postimg.cc/59mBgC3c/Gemini-Generated-Image-3lfycw3lfycw3lfy.png',
-        sku: 'TB001',
-        retailPrice: 219,
-        priceMoq10: 185,
-        priceMoq20Plus: 165,
-        priceMoq50Plus: 145
-    },
-    {
-        id: '2',
-        name: 'Rose Stick',
-        description: 'Elegant crochet rose stick available in classic red. Ships in 5-7 business days.',
-        image: 'https://i.postimg.cc/KvJ2rJwc/Gemini-Generated-Image-aec491aec491aec4.png',
-        sku: 'TB002',
-        retailPrice: 199,
-        priceMoq10: 170,
-        priceMoq20Plus: 150,
-        priceMoq50Plus: 130
-    },
-    {
-        id: '3',
-        name: 'Tulip Stick',
-        description: 'High-quality crochet tulip stick with a real-touch feel. Ships in 7-10 business days.',
-        image: 'https://i.postimg.cc/nzzVBNVq/Gemini-Generated-Image-pf52ytpf52ytpf52.png',
-        sku: 'TB003',
-        retailPrice: 130,
-        priceMoq10: 110,
-        priceMoq20Plus: 100,
-        priceMoq50Plus: 90
-    },
-    {
-        id: '4',
-        name: 'Realistic Sunflower Stick',
-        description: 'Premium realistic sunflower stick with detailed center and textured leaves. Ships in 7-10 business days.',
-        image: 'https://i.postimg.cc/5yrmfcjd/Gemini-Generated-Image-7oozv97oozv97ooz.png',
-        sku: 'TB004',
-        retailPrice: 549,
-        priceMoq10: 480,
-        priceMoq20Plus: 430,
-        priceMoq50Plus: 380
-    },
-    {
-        id: '5',
-        name: 'Petal Rose Stick',
-        description: 'Detailed petal rose stick with gradient coloring for a natural look. Ships in 7-10 business days.',
-        image: 'https://i.postimg.cc/bvdkNVcd/Gemini-Generated-Image-24s7qc24s7qc24s7.png',
-        sku: 'TB005',
-        retailPrice: 279,
-        priceMoq10: 250,
-        priceMoq20Plus: 230,
-        priceMoq50Plus: 210.00
-    },
-    {
-        id: '6',
-        name: 'Sunflower Pot',
-        description: 'A cheerful desk buddy to brighten the room. Ships in 10-14 business days.',
-        image: 'https://i.postimg.cc/28CcGmRg/Gemini-Generated-Image-m0fgp4m0fgp4m0fg.png',
-        sku: 'TB006',
-        retailPrice: 350,
-        priceMoq10: 300,
-        priceMoq20Plus: 260,
-        priceMoq50Plus: 230
-    }
-];
+// Mock data removed; completely integrated into MongoDB `catalogue` collection.
 
 // --- Components ---
 
@@ -100,6 +32,7 @@ interface ProductCardProps {
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
     const [qty, setQty] = useState(1);
+    const [imgLoaded, setImgLoaded] = useState(false);
     
     let currentPrice = product.retailPrice;
     if (qty >= 50 && product.priceMoq50Plus) currentPrice = product.priceMoq50Plus;
@@ -112,16 +45,23 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }
             animate={{ opacity: 1, y: 0 }}
             className="bg-white rounded-2xl border border-black/5 flex flex-col shadow-sm overflow-hidden hover:shadow-md transition-shadow"
         >
-            <div className="aspect-square overflow-hidden bg-stone-100 relative">
+            <div className="aspect-square overflow-hidden bg-stone-100 relative group">
+                {!imgLoaded && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-stone-50 z-10">
+                        <div className="w-8 h-8 rounded-full border-4 border-stone-200 border-t-emerald-400 animate-spin mb-3"></div>
+                        <span className="text-[10px] font-bold text-stone-400 tracking-widest uppercase animate-pulse">Loading Image</span>
+                    </div>
+                )}
                 <img
                     src={product.image}
                     alt={product.name}
                     loading="lazy"
                     decoding="async"
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                    onLoad={() => setImgLoaded(true)}
+                    className={`w-full h-full object-cover transition-all duration-700 ${imgLoaded ? 'opacity-100 scale-100 group-hover:scale-105' : 'opacity-0 scale-105'}`}
                     referrerPolicy="no-referrer"
                 />
-                <div className="absolute top-3 left-3">
+                <div className="absolute top-3 left-3 z-20">
                     <span className="bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg text-[10px] font-mono font-medium tracking-wider uppercase text-stone-500 border border-black/5">
                         {product.sku}
                     </span>
@@ -203,35 +143,25 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }
 
 export default function App() {
     const [searchQuery, setSearchQuery] = useState('');
-    const [dynamicProducts, setDynamicProducts] = useState<Product[]>([]);
+    const [products, setProducts] = useState<Product[]>([]);
     const [cart, setCart] = useState<CartItem[]>([]);
     const [isCartOpen, setIsCartOpen] = useState(false);
 
     useEffect(() => {
-        // Fetch dynamic products added through the inventory (Finished Goods)
+        // Fetch products straight from the Catalogue API
         fetch('/api/public/catalogue')
             .then(res => res.json())
             .then(data => {
                 const mappedProducts: Product[] = data.map((item: any) => ({
-                    id: item._id,
-                    name: item.name,
-                    description: `Category: ${item.category} | Stock: ${item.quantity} ${item.unit}`,
-                    // Provide a charming subtle generic image for newly added un-imaged inventory items
-                    image: 'https://i.postimg.cc/85zKbs3F/Gemini-Generated-Image-4b0p9x4b0p9x4b0p.png',
-                    sku: `DYN-${item._id.substring(item._id.length - 4).toUpperCase()}`,
-                    retailPrice: item.costPerUnit || 0,
-                    priceMoq10: Math.round((item.costPerUnit || 0) * 0.9),
-                    priceMoq20Plus: Math.round((item.costPerUnit || 0) * 0.85),
-                    priceMoq50Plus: Math.round((item.costPerUnit || 0) * 0.8)
+                    ...item,
+                    id: item._id, // Map MongoDB _id onto id
                 }));
-                setDynamicProducts(mappedProducts);
+                setProducts(mappedProducts);
             })
-            .catch(err => console.error("Failed to load dynamic catalogue", err));
+            .catch(err => console.error("Failed to load catalogue from DB", err));
     }, []);
 
-    const ALL_PRODUCTS = [...MOCK_PRODUCTS, ...dynamicProducts];
-
-    const filteredProducts = ALL_PRODUCTS.filter(product => {
+    const filteredProducts = products.filter(product => {
         return product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             product.sku.toLowerCase().includes(searchQuery.toLowerCase());
     });

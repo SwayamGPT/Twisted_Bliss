@@ -182,3 +182,28 @@ export const InventoryItem: Model<IInventoryItem> = mongoose.models.InventoryIte
 export const Expense: Model<IExpense> = mongoose.models.Expense || mongoose.model<IExpense>('Expense', expenseSchema);
 export const User: Model<IUser> = mongoose.models.User || mongoose.model<IUser>('User', userSchema);
 export const AuditLog: Model<IAuditLog> = mongoose.models.AuditLog || mongoose.model<IAuditLog>('AuditLog', auditLogSchema);
+
+export interface ICatalogueItem extends Document {
+  name: string;
+  description: string;
+  image: string;
+  sku: string;
+  retailPrice: number;
+  priceMoq10: number;
+  priceMoq20Plus: number;
+  priceMoq50Plus: number;
+}
+
+const catalogueItemSchema = new Schema<ICatalogueItem>({
+  name: { type: String, required: true },
+  description: { type: String, default: '' },
+  image: { type: String, default: '' },
+  sku: { type: String, required: true },
+  retailPrice: { type: Number, required: true, min: 0 },
+  priceMoq10: { type: Number, required: true, min: 0 },
+  priceMoq20Plus: { type: Number, required: true, min: 0 },
+  priceMoq50Plus: { type: Number, required: true, min: 0 },
+});
+
+// Passed 'catalogue' as the third argument to force mongoose to use that exact collection name
+export const Catalogue: Model<ICatalogueItem> = mongoose.models.Catalogue || mongoose.model<ICatalogueItem>('Catalogue', catalogueItemSchema, 'catalogue');

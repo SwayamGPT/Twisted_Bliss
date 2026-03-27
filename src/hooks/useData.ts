@@ -98,77 +98,55 @@ export const useData = () => {
   const [globalSearch, setGlobalSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
 
-  const fetchData = async () => {
+  const fetchData = () => {
     const token = localStorage.getItem('tb_admin_token');
     if (!token) {
       setIsAuthenticated(false);
+      setLoading(false);
       return;
     }
 
-    try {
-      const headers = { 'Authorization': `Bearer ${token}` };
-      const [craftersRes, ordersRes, customerOrdersRes, walletRes, invRes, expRes, meRes, auditRes] = await Promise.all([
-        fetch('/api/crafters', { headers }),
-        fetch('/api/orders', { headers }),
-        fetch('/api/customer-orders', { headers }),
-        fetch('/api/wallet/transactions', { headers }),
-        fetch('/api/inventory', { headers }),
-        fetch('/api/expenses', { headers }),
-        fetch('/api/me', { headers }),
-        fetch('/api/audit', { headers })
-      ]);
+    const headers = { 'Authorization': `Bearer ${token}` };
 
-      const allRes = [craftersRes, ordersRes, customerOrdersRes, walletRes, invRes, expRes, meRes, auditRes];
-      const authFailed = allRes.some(r => r.status === 401 || r.status === 403);
-
-      if (authFailed) {
-        handleLogout();
-        return;
+    const fetchResource = async (url: string, setter: (data: any) => void, isMe: boolean = false) => {
+      try {
+        const res = await fetch(url, { headers });
+        if (res.status === 401 || res.status === 403) {
+          handleLogout();
+          throw new Error('Unauthorized');
+        }
+        if (!res.ok) throw new Error(`Failed to load ${url} (${res.status})`);
+        
+        const data = await res.json();
+        
+        if (isMe) {
+          setCurrentUser(data);
+          setProfileName(data.name);
+          setProfileEmail(data.email);
+          setProfilePhotoUrl(data.profilePhotoUrl || '');
+          setLoading(false); // Stop brutal loading screen as soon as auth & user profile resolves
+        } else {
+          setter(data);
+        }
+      } catch (err: any) {
+        console.error(`FetchData error for ${url}:`, err);
+        if (err.message === 'Failed to fetch') {
+          setError('Network error: Could not reach the server. Please check your internet or if the server is down.');
+        } else if (err.message !== 'Unauthorized') {
+          setError(err.message || 'An unexpected error occurred while loading data.');
+        }
       }
+    };
 
-      if (!craftersRes.ok) throw new Error(`Failed to load Crafters (${craftersRes.status})`);
-      if (!ordersRes.ok) throw new Error(`Failed to load Orders (${ordersRes.status})`);
-      if (!customerOrdersRes.ok) throw new Error(`Failed to load Customer Orders (${customerOrdersRes.status})`);
-      if (!walletRes.ok) throw new Error(`Failed to load Wallet Transactions (${walletRes.status})`);
-      if (!invRes.ok) throw new Error(`Failed to load Inventory (${invRes.status})`);
-      if (!expRes.ok) throw new Error(`Failed to load Expenses (${expRes.status})`);
-
-      const [craftersData, ordersData, customerOrdersData, walletData, invData, expData] = await Promise.all([
-        craftersRes.json(), ordersRes.json(), customerOrdersRes.json(),
-        walletRes.json(), invRes.json(), expRes.json()
-      ]);
-
-      if (meRes.ok) {
-        const meData = await meRes.json();
-        setCurrentUser(meData);
-        setProfileName(meData.name);
-        setProfileEmail(meData.email);
-        setProfilePhotoUrl(meData.profilePhotoUrl || '');
-      }
-
-      if (auditRes.ok) {
-        const auditData = await auditRes.json();
-        setAuditLogs(auditData);
-      }
-
-      setCrafters(craftersData);
-      setOrders(ordersData);
-      setCustomerOrders(customerOrdersData);
-      setWalletTxns(walletData);
-      setInventory(invData);
-      setExpenses(expData);
-      setError('');
-    } catch (err: any) {
-      console.error('FetchData error:', err);
-      // Differentiate between network errors and others
-      if (err.message === 'Failed to fetch') {
-        setError('Network error: Could not reach the server. Please check your internet or if the server is down.');
-      } else {
-        setError(err.message || 'An unexpected error occurred while loading data.');
-      }
-    } finally {
-      setLoading(false);
-    }
+    // Fire all fetches independently so they resolve at their own pace without blocking the UI
+    fetchResource('/api/me', null, true);
+    fetchResource('/api/crafters', setCrafters);
+    fetchResource('/api/orders', setOrders);
+    fetchResource('/api/customer-orders', setCustomerOrders);
+    fetchResource('/api/wallet/transactions', setWalletTxns);
+    fetchResource('/api/inventory', setInventory);
+    fetchResource('/api/expenses', setExpenses);
+    fetchResource('/api/audit', setAuditLogs);
   };
 
   useEffect(() => {
