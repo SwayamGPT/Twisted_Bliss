@@ -84,3 +84,16 @@ export type AuditLog = {
   details?: string;
   timestamp: string;
 };
+
+export type CatalogueItem = {
+  id?: string;
+  _id?: string;
+  name: string;
+  description: string;
+  image: string;
+  sku: string;
+  retailPrice: number;
+  priceMoq10: number;
+  priceMoq20Plus: number;
+  priceMoq50Plus: number;
+};

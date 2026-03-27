@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Toaster, toast } from 'react-hot-toast';
 import {
-  LayoutDashboard, ShoppingBag, Box, Receipt, History, User, UserPlus, X, Truck, Factory, Eye, EyeOff
+  LayoutDashboard, ShoppingBag, Box, Receipt, History, User, UserPlus, X, Truck, Factory, Eye, EyeOff, Store
 } from 'lucide-react';
 
 import { useData } from './hooks/useData';
@@ -14,6 +14,7 @@ import { ShippingTab } from './components/tabs/ShippingTab';
 import { InventoryTab } from './components/tabs/InventoryTab';
 import { ExpensesTab } from './components/tabs/ExpensesTab';
 import { AuditTab } from './components/tabs/AuditTab';
+import { CatalogueTab } from './components/tabs/CatalogueTab';
 import { ProfileModal } from './components/modals/ProfileModal';
 import { AddUserModal } from './components/modals/AddUserModal';
 import { exportToCSV } from './utils';
@@ -103,6 +104,7 @@ export default function App() {
               { id: 'sales', icon: ShoppingBag, label: 'Order Desk' },
               { id: 'wallet', icon: Truck, label: 'Shipping' },
               { id: 'inventory', icon: Box, label: 'Inventory' },
+              { id: 'catalogue', icon: Store, label: 'Catalogue' },
               { id: 'expenses', icon: Receipt, label: 'Expenses' },
               { id: 'audit', icon: History, label: 'Logs' }
             ].map(tab => (
@@ -193,14 +195,14 @@ export default function App() {
         {/* More Options Button for smaller screens */}
         <button
           onClick={() => {
-            const tabs = ['expenses', 'audit'];
+            const tabs = ['catalogue', 'expenses', 'audit'];
             const currentIdx = tabs.indexOf(d.activeTab as any);
             const nextTab = tabs[(currentIdx + 1) % tabs.length];
             d.setActiveTab(nextTab as any);
           }}
-          className={`flex flex-col items-center p-2 rounded-xl transition-all ${['expenses', 'audit'].includes(d.activeTab) ? 'text-sky-600' : 'text-slate-400'}`}
+          className={`flex flex-col items-center p-2 rounded-xl transition-all ${['catalogue', 'expenses', 'audit'].includes(d.activeTab) ? 'text-sky-600' : 'text-slate-400'}`}
         >
-          <History className={`w-5 h-5 ${['expenses', 'audit'].includes(d.activeTab) ? 'stroke-[2.5px]' : 'stroke-[1.5px]'}`} />
+          <History className={`w-5 h-5 ${['catalogue', 'expenses', 'audit'].includes(d.activeTab) ? 'stroke-[2.5px]' : 'stroke-[1.5px]'}`} />
           <span className="text-[10px] font-bold mt-1 uppercase tracking-tighter">More</span>
         </button>
       </nav>
@@ -284,6 +286,21 @@ export default function App() {
             handleExpenseSubmit={d.handleExpenseSubmit} expDate={d.expDate} setExpDate={d.setExpDate} expCategory={d.expCategory}
             setExpCategory={d.setExpCategory} expAmount={d.expAmount} setExpAmount={d.setExpAmount} expDesc={d.expDesc} setExpDesc={d.setExpDesc}
             handleExpenseEdit={d.handleExpenseEdit} handleExpenseDelete={d.handleExpenseDelete}
+          />
+        )}
+
+        {d.activeTab === 'catalogue' && (
+          <CatalogueTab
+            catalogueItems={d.catalogueItems} isCatalogueFormOpen={d.isCatalogueFormOpen} setIsCatalogueFormOpen={d.setIsCatalogueFormOpen}
+            editCatalogueId={d.editCatalogueId} catName={d.catName} setCatName={d.setCatName} catDesc={d.catDesc} setCatDesc={d.setCatDesc}
+            catImage={d.catImage} setCatImage={d.setCatImage} catSku={d.catSku} setCatSku={d.setCatSku}
+            catRetailPrice={d.catRetailPrice} setCatRetailPrice={d.setCatRetailPrice}
+            catPriceMoq10={d.catPriceMoq10} setCatPriceMoq10={d.setCatPriceMoq10}
+            catPriceMoq20Plus={d.catPriceMoq20Plus} setCatPriceMoq20Plus={d.setCatPriceMoq20Plus}
+            catPriceMoq50Plus={d.catPriceMoq50Plus} setCatPriceMoq50Plus={d.setCatPriceMoq50Plus}
+            handleCatalogueSubmit={d.handleCatalogueSubmit} handleCatalogueEdit={d.handleCatalogueEdit}
+            handleCatalogueDelete={d.handleCatalogueDelete} resetCatalogueForm={d.resetCatalogueForm}
+            globalSearch={d.globalSearch} setGlobalSearch={d.setGlobalSearch}
           />
         )}
 

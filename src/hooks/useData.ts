@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import {
-  User, Crafter, Order, CustomerOrder, WalletTransaction, InventoryItem, Expense, AuditLog, Yarn, Product
+  User, Crafter, Order, CustomerOrder, WalletTransaction, InventoryItem, Expense, AuditLog, Yarn, Product, CatalogueItem
 } from '../types';
 
 export const useData = () => {
@@ -18,7 +18,8 @@ export const useData = () => {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [activeTab, setActiveTab] = useState<'admin' | 'crafters' | 'sales' | 'wallet' | 'inventory' | 'expenses' | 'audit'>('admin');
+  const [catalogueItems, setCatalogueItems] = useState<CatalogueItem[]>([]);
+  const [activeTab, setActiveTab] = useState<'admin' | 'crafters' | 'sales' | 'wallet' | 'inventory' | 'expenses' | 'audit' | 'catalogue'>('admin');
 
   // Profile Settings Modal
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -86,6 +87,18 @@ export const useData = () => {
   const [invCost, setInvCost] = useState<number | ''>('');
   const [invThreshold, setInvThreshold] = useState<number | ''>(5);
 
+  // Catalogue Form State
+  const [isCatalogueFormOpen, setIsCatalogueFormOpen] = useState(false);
+  const [editCatalogueId, setEditCatalogueId] = useState<string | null>(null);
+  const [catName, setCatName] = useState('');
+  const [catDesc, setCatDesc] = useState('');
+  const [catImage, setCatImage] = useState('');
+  const [catSku, setCatSku] = useState('');
+  const [catRetailPrice, setCatRetailPrice] = useState<number | ''>('');
+  const [catPriceMoq10, setCatPriceMoq10] = useState<number | ''>('');
+  const [catPriceMoq20Plus, setCatPriceMoq20Plus] = useState<number | ''>('');
+  const [catPriceMoq50Plus, setCatPriceMoq50Plus] = useState<number | ''>('');
+
   // Expenses Form State
   const [isExpenseFormOpen, setIsExpenseFormOpen] = useState(false);
   const [editExpenseId, setEditExpenseId] = useState<string | null>(null);
@@ -147,6 +160,10 @@ export const useData = () => {
     fetchResource('/api/inventory', setInventory);
     fetchResource('/api/expenses', setExpenses);
     fetchResource('/api/audit', setAuditLogs);
+    fetchResource('/api/catalogue', (data) => {
+      // the new Catalogue endpoints expect mapping _id to id to match Product signature
+      setCatalogueItems(data.map((item: any) => ({ ...item, id: item._id })));
+    });
   };
 
   useEffect(() => {
@@ -661,6 +678,56 @@ export const useData = () => {
     setInvCost(''); setInvThreshold(5); setEditInventoryId(null); setIsInventoryFormOpen(false);
   };
 
+  const handleCatalogueSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = {
+      name: catName, description: catDesc, image: catImage, sku: catSku,
+      retailPrice: Number(catRetailPrice), priceMoq10: Number(catPriceMoq10),
+      priceMoq20Plus: Number(catPriceMoq20Plus), priceMoq50Plus: Number(catPriceMoq50Plus)
+    };
+    const token = localStorage.getItem('tb_admin_token');
+    if (editCatalogueId) {
+      const res = await fetch(`/api/catalogue/${editCatalogueId}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(payload)
+      });
+      if (res.status === 401) return handleLogout();
+      const updated = await res.json();
+      setCatalogueItems(catalogueItems.map(c => c.id === editCatalogueId ? { ...updated, id: updated._id } : c));
+    } else {
+      const res = await fetch('/api/catalogue', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(payload)
+      });
+      if (res.status === 401) return handleLogout();
+      const saved = await res.json();
+      setCatalogueItems([...catalogueItems, { ...saved, id: saved._id }]);
+    }
+    resetCatalogueForm();
+  };
+
+  const handleCatalogueEdit = (item: CatalogueItem) => {
+    setCatName(item.name); setCatDesc(item.description); setCatImage(item.image); setCatSku(item.sku);
+    setCatRetailPrice(item.retailPrice); setCatPriceMoq10(item.priceMoq10);
+    setCatPriceMoq20Plus(item.priceMoq20Plus); setCatPriceMoq50Plus(item.priceMoq50Plus);
+    setEditCatalogueId(item.id); setIsCatalogueFormOpen(true);
+  };
+
+  const handleCatalogueDelete = async (id: string) => {
+    if (window.confirm('Permanently delete this product from the public catalogue?')) {
+      const token = localStorage.getItem('tb_admin_token');
+      const res = await fetch(`/api/catalogue/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+      if (res.status === 401) return handleLogout();
+      setCatalogueItems(catalogueItems.filter(c => c.id !== id));
+    }
+  };
+
+  const resetCatalogueForm = () => {
+    setCatName(''); setCatDesc(''); setCatImage(''); setCatSku('');
+    setCatRetailPrice(''); setCatPriceMoq10(''); setCatPriceMoq20Plus(''); setCatPriceMoq50Plus('');
+    setEditCatalogueId(null); setIsCatalogueFormOpen(false);
+  };
+
   const handleExpenseSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const expData = { date: expDate, category: expCategory, amount: Number(expAmount), description: expDesc };
@@ -852,11 +919,15 @@ export const useData = () => {
     isInventoryFormOpen, setIsInventoryFormOpen, editInventoryId, setEditInventoryId, invName, setInvName, invCategory, setInvCategory, invQty, setInvQty,
     invUnit, setInvUnit, invCost, setInvCost, invThreshold, setInvThreshold,
     isExpenseFormOpen, setIsExpenseFormOpen, editExpenseId, setEditExpenseId, expDate, setExpDate, expCategory, setExpCategory, expAmount, setExpAmount, expDesc, setExpDesc,
+    catalogueItems, isCatalogueFormOpen, setIsCatalogueFormOpen, editCatalogueId,
+    catName, setCatName, catDesc, setCatDesc, catImage, setCatImage, catSku, setCatSku,
+    catRetailPrice, setCatRetailPrice, catPriceMoq10, setCatPriceMoq10, catPriceMoq20Plus, setCatPriceMoq20Plus,
+    catPriceMoq50Plus, setCatPriceMoq50Plus,
     globalSearch, setGlobalSearch, statusFilter, setStatusFilter,
     handleAddCrafter, handleDeleteCrafter, handleHooksChange, resetForm, handleSubmit, handleEdit, handleDelete, toggleOrderStatus,
     addSaleProduct, removeSaleProduct, updateSaleProduct, resetSalesForm, handleSalesSubmit, handleSalesEdit, handleSalesDelete, toggleSalesOrderStatus,
     handleWalletSubmit, handleWalletDelete, handleInventorySubmit, handleInventoryEdit, handleInventoryDelete, resetInventoryForm,
-    handleExpenseSubmit, handleExpenseEdit, handleExpenseDelete, resetExpenseForm, handleFileUpload, handleUpdateProfile, handleCreateUser,
+    handleExpenseSubmit, handleExpenseEdit, handleExpenseDelete, resetExpenseForm, handleCatalogueSubmit, handleCatalogueEdit, handleCatalogueDelete, resetCatalogueForm, handleFileUpload, handleUpdateProfile, handleCreateUser,
     totalRevenue, totalLaborCost, totalMaterialCost, totalExpenses, totalShippingDeductions, walletTotalAdded, walletBalance, inventoryTotalCost,
     totalProfit, totalCosts, trueROI, avgOrderValue, netMargin, lowStockCount, inventoryHealth, adminTotalHooks,
     bestSellersData, monthlyTrendData, clvData, avgFulfillmentTime, inventoryWarnings, COLORS, handleCopyLabel
