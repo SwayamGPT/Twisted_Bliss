@@ -5,7 +5,7 @@ import ProductCatalogue from './components/ProductCatalogue';
 
 export const router = createBrowserRouter([
   {
-    path: '/',
+    path: '/catalogue',
     element: <ProductCatalogue />
   },
   {
