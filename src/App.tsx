@@ -104,9 +104,7 @@ export default function App() {
               { id: 'sales', icon: ShoppingBag, label: 'Order Desk' },
               { id: 'wallet', icon: Truck, label: 'Shipping' },
               { id: 'inventory', icon: Box, label: 'Inventory' },
-              { id: 'catalogue', icon: Store, label: 'Catalogue' },
-              { id: 'expenses', icon: Receipt, label: 'Expenses' },
-              { id: 'audit', icon: History, label: 'Logs' }
+              { id: 'expenses', icon: Receipt, label: 'Expenses' }
             ].map(tab => (
               <motion.button
                 key={tab.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
@@ -145,6 +143,20 @@ export default function App() {
                     <div className="px-4 py-2 border-b border-sky-50 mb-1">
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Signed in as</p>
                       <p className="text-sm font-bold text-slate-700 truncate">{d.currentUser?.name}</p>
+                    </div>
+                    <div className="border-b border-sky-50 mb-1 pb-1">
+                      <button
+                        onClick={() => { d.setActiveTab('catalogue'); d.setIsProfileDropdownOpen(false); }}
+                        className="w-full text-left px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-sky-50 hover:text-sky-600 transition-colors flex items-center gap-2"
+                      >
+                        <Store className="w-4 h-4" /> Manage Catalogue
+                      </button>
+                      <button
+                        onClick={() => { d.setActiveTab('audit'); d.setIsProfileDropdownOpen(false); }}
+                        className="w-full text-left px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-sky-50 hover:text-sky-600 transition-colors flex items-center gap-2"
+                      >
+                        <History className="w-4 h-4" /> System Logs
+                      </button>
                     </div>
                     <button
                       onClick={() => { d.setIsProfileModalOpen(true); d.setIsProfileDropdownOpen(false); }}
@@ -194,16 +206,11 @@ export default function App() {
         ))}
         {/* More Options Button for smaller screens */}
         <button
-          onClick={() => {
-            const tabs = ['catalogue', 'expenses', 'audit'];
-            const currentIdx = tabs.indexOf(d.activeTab as any);
-            const nextTab = tabs[(currentIdx + 1) % tabs.length];
-            d.setActiveTab(nextTab as any);
-          }}
-          className={`flex flex-col items-center p-2 rounded-xl transition-all ${['catalogue', 'expenses', 'audit'].includes(d.activeTab) ? 'text-sky-600' : 'text-slate-400'}`}
+          onClick={() => d.setActiveTab('expenses')}
+          className={`flex flex-col items-center p-2 rounded-xl transition-all ${d.activeTab === 'expenses' ? 'text-sky-600' : 'text-slate-400'}`}
         >
-          <History className={`w-5 h-5 ${['catalogue', 'expenses', 'audit'].includes(d.activeTab) ? 'stroke-[2.5px]' : 'stroke-[1.5px]'}`} />
-          <span className="text-[10px] font-bold mt-1 uppercase tracking-tighter">More</span>
+          <Receipt className={`w-5 h-5 ${d.activeTab === 'expenses' ? 'stroke-[2.5px]' : 'stroke-[1.5px]'}`} />
+          <span className="text-[10px] font-bold mt-1 uppercase tracking-tighter">Exp</span>
         </button>
       </nav>
 
