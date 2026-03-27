@@ -249,7 +249,7 @@ export default function App() {
             customerPhone={d.customerPhone} setCustomerPhone={d.setCustomerPhone} customerAddress={d.customerAddress} setCustomerAddress={d.setCustomerAddress}
             products={d.products} updateSaleProduct={d.updateSaleProduct} addSaleProduct={d.addSaleProduct} removeSaleProduct={d.removeSaleProduct}
             inventory={d.inventory} setInvName={d.setInvName} setInvCategory={d.setInvCategory} setActiveTab={d.setActiveTab} setIsInventoryFormOpen={d.setIsInventoryFormOpen}
-            shippingCharge={d.shippingCharge} setShippingCharge={d.setShippingCharge} salesStatus={d.salesStatus} setSalesStatus={d.setSalesStatus}
+            shippingCharge={d.shippingCharge} setShippingCharge={d.setShippingCharge} actualShippingCost={d.actualShippingCost} setActualShippingCost={d.setActualShippingCost} salesStatus={d.salesStatus} setSalesStatus={d.setSalesStatus}
             toggleSalesOrderStatus={d.toggleSalesOrderStatus} handleSalesEdit={d.handleSalesEdit} handleSalesDelete={d.handleSalesDelete}
             handleGenerateInvoice={() => toast.success('Invoice generation coming soon!')} handleCopyShippingLabel={d.handleCopyLabel}
           />

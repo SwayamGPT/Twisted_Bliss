@@ -116,7 +116,7 @@ export const InsightsTab: React.FC<InsightsTabProps> = ({
           </div>
           <div>
             <p className="text-xs sm:text-sm font-semibold text-slate-600 uppercase tracking-wider">Total Orders</p>
-            <p className="text-xl sm:text-2xl font-bold text-pink-600">{orders.length + customerOrders.length}</p>
+            <p className="text-xl sm:text-2xl font-bold text-pink-600">{customerOrders.length}</p>
           </div>
         </div>
         <div className="bg-sky-100 p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-lg border border-sky-200 flex items-center gap-4">

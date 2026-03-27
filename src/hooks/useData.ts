@@ -869,7 +869,7 @@ export const useData = () => {
     orderDate, setOrderDate, piece, setPiece, yarns, addYarn, removeYarn, updateYarn, stuffing, setStuffing, wire, setWire, eyes, setEyes,
     materialCost, setMaterialCost, qtyOrdered, setQtyOrdered, qtyReceived, setQtyReceived, timeTaken, setTimeTaken, laborCost, setLaborCost, sellingPrice, setSellingPrice,
     customerName, setCustomerName, customerPhone, setCustomerPhone, customerAddress, setCustomerAddress, salesOrderDate, setSalesOrderDate,
-    products, setProducts, shippingCharge, setShippingCharge, salesStatus, setSalesStatus, isSalesFormOpen, setIsSalesFormOpen, editSalesOrderId,
+    products, setProducts, shippingCharge, setShippingCharge, actualShippingCost, setActualShippingCost, salesStatus, setSalesStatus, isSalesFormOpen, setIsSalesFormOpen, editSalesOrderId,
     walletDate, setWalletDate, aggregator, setAggregator, walletAmount, setWalletAmount, referenceId, setReferenceId, isWalletFormOpen, setIsWalletFormOpen,
     isInventoryFormOpen, setIsInventoryFormOpen, editInventoryId, setEditInventoryId, invName, setInvName, invCategory, setInvCategory, invQty, setInvQty,
     invUnit, setInvUnit, invCost, setInvCost, invThreshold, setInvThreshold,
