@@ -47,6 +47,13 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 });
 
 async function startServer() {
+  try {
+    console.log('Initializing database connection...');
+    await connectDB();
+  } catch (err) {
+    console.error('Initial DB connection failed:', err);
+  }
+
   if (process.env.NODE_ENV === 'production') {
     app.use(express.static('dist'));
   }
