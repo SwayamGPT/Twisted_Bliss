@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Instagram, Heart, ShoppingBag, ArrowRight, ShoppingCart, X, Plus, Minus, ChevronDown, Search, User, Home, LayoutGrid } from 'lucide-react';
+import { Toaster, toast } from 'react-hot-toast';
 
 const API_BASE_URL = '';
 
@@ -484,7 +485,7 @@ export default function App() {
             setAuthPassword('');
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Authentication failed';
-            alert(message);
+            toast.error(message);
         } finally {
             setIsSubmittingAuth(false);
         }
@@ -493,7 +494,7 @@ export default function App() {
     const handleCheckout = async () => {
         try {
             if (cart.length === 0) {
-                alert('Your cart is empty.');
+                toast.error('Your cart is empty.');
                 return;
             }
 
@@ -535,12 +536,12 @@ export default function App() {
                         if (!verifyResponse.ok) {
                             throw new Error(verifyData.error || verifyData.detail || 'Payment verification failed');
                         }
-                        alert(`Payment successful. Order ID: ${orderData.order_id}`);
+                        toast.success(`Payment successful. Order ID: ${orderData.order_id}`);
                         setCart([]);
                         setIsCartOpen(false);
                     } catch (error) {
                         const message = error instanceof Error ? error.message : 'Verification failed';
-                        alert(message);
+                        toast.error(message);
                     }
                 },
             };
@@ -552,7 +553,7 @@ export default function App() {
             razorpayInstance.open();
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Payment failed';
-            alert(message);
+            toast.error(message);
         } finally {
             setIsPaying(false);
         }
@@ -574,13 +575,13 @@ export default function App() {
 
     const handleAdminCreateOrder = async () => {
         if (!authUser || authUser.role !== "admin") {
-            alert("Admin access required.");
+            toast.error("Admin access required.");
             return;
         }
 
         const token = localStorage.getItem("twisted_bliss_token");
         if (!token) {
-            alert("Please sign in again.");
+            toast.error("Please sign in again.");
             return;
         }
 
@@ -617,12 +618,12 @@ export default function App() {
             .filter((item): item is CartItem => item !== null);
 
         if (sanitizedItems.length === 0) {
-            alert("Please add at least one valid item.");
+            toast.error("Please add at least one valid item.");
             return;
         }
 
         if (adminOrderTotal <= 0) {
-            alert("Total amount must be greater than zero.");
+            toast.error("Total amount must be greater than zero.");
             return;
         }
 
@@ -646,12 +647,12 @@ export default function App() {
                 throw new Error(data.error || data.detail || "Failed to create order");
             }
 
-            alert(`Order created successfully. Order ID: ${data.order_id}`);
+            toast.success(`Order created successfully. Order ID: ${data.order_id}`);
             setAdminCustomerEmail("");
             setAdminOrderItems([createEmptyAdminItem(0)]);
         } catch (error) {
             const message = error instanceof Error ? error.message : "Failed to create order";
-            alert(message);
+            toast.error(message);
         } finally {
             setIsSubmittingAdminOrder(false);
         }
@@ -659,6 +660,7 @@ export default function App() {
 
     return (
         <div className="min-h-screen bg-[var(--color-floral-bg)] text-[var(--color-floral-dark)] font-sans selection:bg-[var(--color-floral-accent)] selection:text-white">
+            <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
             {/* Navigation */}
             <nav className="fixed w-full z-50 bg-[var(--color-floral-bg)]/90 backdrop-blur-md border-b border-[var(--color-floral-dark)]/5">
                 <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
