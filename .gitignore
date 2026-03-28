@@ -7,9 +7,17 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Node modules
-node_modules/
-jspm_packages/
+# Node
+node_modules
+jspm_packages
+
+# Build outputs
+dist
+build
+out
+.next/
+dist-ssr
+*.local
 
 # Environment variables
 .env
@@ -17,18 +25,35 @@ jspm_packages/
 .env.development.local
 .env.test.local
 .env.production.local
-.env.*
+**/.env
+**/.env.*
 
-# Production builds
-dist/
-dist-ssr/
-build/
-*.build
+# Application Data & Configs
+*.pem
+.gemini/
 
-# Testing
-coverage/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
 
-# IDE and Editor configs
+# Python virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv
+
+# Python testing/coverage
+.pytest_cache/
+.mypy_cache/
+.tox/
+coverage.xml
+*.cover
+
+# AI / IDE related directories
 .vscode/
 .idea/
 *.suo
@@ -36,10 +61,18 @@ coverage/
 *.njsproj
 *.sln
 *.sw?
+
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
-# Brain metadata
-.gemini/
-brain/
+# Vercel
+.vercel
 
-acc_creation.md
+# Testing
+/coverage

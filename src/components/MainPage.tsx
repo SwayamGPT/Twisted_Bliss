@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Instagram, Heart, ShoppingBag, ArrowRight, ShoppingCart, X, Plus, Minus, ChevronDown, Search, User, Home, LayoutGrid } from 'lucide-react';
 
 const API_BASE_URL = 'http://localhost:8000';
@@ -418,7 +418,7 @@ export default function App() {
             if (existing) {
                 return prev.map(i => i.name === item.name ? { ...i, quantity: i.quantity + 1 } : i);
             }
-            return [...prev, { ...item, quantity: 1, collectionTitle }];
+            return [...prev, { ...item, id: getProductId(item.name), quantity: 1, collectionTitle }];
         });
         setIsCartOpen(true);
     };
@@ -812,7 +812,7 @@ export default function App() {
                                 <ProductCard
                                     key={`${collection.id}-${i}`}
                                     id={i === 0 ? collection.id : getProductId(item.name)}
-                                    product={{ ...item, image: collection.image, collectionId: collection.id }}
+                                    product={{ ...item, image: collection.image, collectionId: collection.id, collectionTitle: collection.title }}
                                     addToCart={addToCart}
                                     categoryName={collection.title}
                                 />
@@ -842,7 +842,7 @@ export default function App() {
                                 <ProductCard
                                     key={`${collection.id}-${i}`}
                                     id={i === 0 ? collection.id : getProductId(item.name)}
-                                    product={{ ...item, image: collection.image, collectionId: collection.id }}
+                                    product={{ ...item, image: collection.image, collectionId: collection.id, collectionTitle: collection.title }}
                                     addToCart={addToCart}
                                     categoryName={collection.title}
                                 />
