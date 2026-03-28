@@ -2,9 +2,9 @@
   "name": "Twisted Bliss",
   "short_name": "Twisted Bliss",
   "description": "Admin gateway for Twisted Bliss",
-  "start_url": "/",
+  "start_url": "/admin",
   "display": "standalone",
-  "background_color": "#fdf2f8",
+  "background_color": "#ffffff",
   "theme_color": "#0ea5e9",
   "icons": [
     {
@@ -20,15 +20,15 @@
       "purpose": "any"
     },
     {
-      "src": "/Twisted_Bliss_Logo-removebg.png",
+      "src": "/Twisted_Bliss_Logo.jpg",
       "sizes": "192x192",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "maskable"
     },
     {
-      "src": "/Twisted_Bliss_Logo-removebg.png",
+      "src": "/Twisted_Bliss_Logo.jpg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "maskable"
     }
   ]
