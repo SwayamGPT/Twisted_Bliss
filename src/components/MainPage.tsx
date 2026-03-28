@@ -467,7 +467,7 @@ export default function App() {
 
             const data = await response.json();
             if (!response.ok) {
-                throw new Error(data.detail || 'Authentication failed');
+                throw new Error(data.error || data.detail || 'Authentication failed');
             }
 
             localStorage.setItem('twisted_bliss_token', data.access_token);
@@ -509,7 +509,7 @@ export default function App() {
             });
             const orderData = await response.json();
             if (!response.ok) {
-                throw new Error(orderData.detail || 'Failed to create payment order');
+                throw new Error(orderData.error || orderData.detail || 'Failed to create payment order');
             }
 
             const paymentOptions = {
@@ -533,7 +533,7 @@ export default function App() {
                         });
                         const verifyData = await verifyResponse.json();
                         if (!verifyResponse.ok) {
-                            throw new Error(verifyData.detail || 'Payment verification failed');
+                            throw new Error(verifyData.error || verifyData.detail || 'Payment verification failed');
                         }
                         alert(`Payment successful. Order ID: ${orderData.order_id}`);
                         setCart([]);
@@ -643,7 +643,7 @@ export default function App() {
 
             const data = await response.json();
             if (!response.ok) {
-                throw new Error(data.detail || "Failed to create order");
+                throw new Error(data.error || data.detail || "Failed to create order");
             }
 
             alert(`Order created successfully. Order ID: ${data.order_id}`);
