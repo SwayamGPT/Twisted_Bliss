@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import { BuyerUser } from '../models/index.js';
 import { connectDB } from '../config/db.js';
 
-const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRE_MINUTES = parseInt(process.env.JWT_EXPIRE_MINUTES || '0', 10);
 
 // Password hashing logic matching Python's pbkdf2_hmac
@@ -31,8 +31,8 @@ export const verifyPassword = (password: string, hashed_password: string): boole
 };
 
 export const createAccessToken = (payload: object): string => {
-  if (!JWT_SECRET_KEY) throw new Error('JWT_SECRET_KEY is not configured');
-  return jwt.sign(payload, JWT_SECRET_KEY, { expiresIn: `${JWT_EXPIRE_MINUTES}m` });
+  if (!JWT_SECRET) throw new Error('JWT_SECRET is not configured');
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: `${JWT_EXPIRE_MINUTES}m` });
 };
 
 export interface AuthRequest extends Request {
@@ -47,8 +47,8 @@ export const getBuyerCurrentUser = async (req: AuthRequest, res: Response, next:
 
   const token = authHeader.split(' ')[1];
   try {
-    if (!JWT_SECRET_KEY) throw new Error('JWT_SECRET_KEY is not configured');
-    const payload: any = jwt.verify(token, JWT_SECRET_KEY);
+    if (!JWT_SECRET) throw new Error('JWT_SECRET is not configured');
+    const payload: any = jwt.verify(token, JWT_SECRET);
     await connectDB();
     const user = await BuyerUser.findOne({ email: payload.email }).select('-password');
     if (!user) {
