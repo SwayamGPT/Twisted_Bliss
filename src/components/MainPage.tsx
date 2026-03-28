@@ -375,7 +375,7 @@ export default function App() {
     useEffect(() => {
         const fetchCollections = async () => {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/collections`);
+                const response = await fetch(`${API_BASE_URL}/api/buyer/collections`);
                 if (!response.ok) {
                     return;
                 }
@@ -454,7 +454,7 @@ export default function App() {
     const handleAuthSubmit = async () => {
         try {
             setIsSubmittingAuth(true);
-            const endpoint = isLoginMode ? '/api/auth/login' : '/api/auth/register';
+            const endpoint = isLoginMode ? '/api/buyer/auth/login' : '/api/buyer/auth/register';
             const payload = isLoginMode
                 ? { email: authEmail, password: authPassword }
                 : { name: authName, email: authEmail, password: authPassword };
@@ -498,7 +498,7 @@ export default function App() {
             }
 
             setIsPaying(true);
-            const response = await fetch(`${API_BASE_URL}/api/payments/create-order`, {
+            const response = await fetch(`${API_BASE_URL}/api/buyer/payments/create-order`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -521,7 +521,7 @@ export default function App() {
                 order_id: orderData.razorpay_order_id,
                 handler: async (paymentResponse: any) => {
                     try {
-                        const verifyResponse = await fetch(`${API_BASE_URL}/api/payments/verify`, {
+                        const verifyResponse = await fetch(`${API_BASE_URL}/api/buyer/payments/verify`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -628,7 +628,7 @@ export default function App() {
 
         try {
             setIsSubmittingAdminOrder(true);
-            const response = await fetch(`${API_BASE_URL}/api/admin/orders`, {
+            const response = await fetch(`${API_BASE_URL}/api/buyer/admin/orders`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
