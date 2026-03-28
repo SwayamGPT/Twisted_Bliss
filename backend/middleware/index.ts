@@ -70,7 +70,10 @@ export interface AuthRequest extends express.Request {
 }
 
 export const requireAuth = async (req: AuthRequest, res: express.Response, next: express.NextFunction) => {
-  const JWT_SECRET = process.env.JWT_SECRET || 'fallback_jwt_secret_please_change';
+  const JWT_SECRET = process.env.JWT_SECRET;
+  if (!JWT_SECRET) {
+    return res.status(500).json({ error: 'JWT_SECRET environment variable is not configured' });
+  }
   
   // Normalize path for check
   const path = req.path.replace(/^\/api/, '');

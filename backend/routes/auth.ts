@@ -8,7 +8,8 @@ import { AuthRequest, createAuditLog } from '../middleware/index.js';
 const router = express.Router();
 
 router.post('/setup', async (req, res) => {
-  const JWT_SECRET = process.env.JWT_SECRET || 'fallback_jwt_secret_please_change';
+  const JWT_SECRET = process.env.JWT_SECRET;
+  if (!JWT_SECRET) throw new Error('JWT_SECRET is not configured');
   try {
     await connectDB();
     const { name, email, password } = req.body;
@@ -32,7 +33,8 @@ router.post('/setup', async (req, res) => {
 });
 
 router.post('/users', async (req: AuthRequest, res) => {
-  const JWT_SECRET = process.env.JWT_SECRET || 'fallback_jwt_secret_please_change';
+  const JWT_SECRET = process.env.JWT_SECRET;
+  if (!JWT_SECRET) throw new Error('JWT_SECRET is not configured');
   try {
     await connectDB();
     const { name, email, password, profilePhotoUrl } = req.body;
@@ -62,7 +64,8 @@ router.post('/users', async (req: AuthRequest, res) => {
 });
 
 router.post('/login', async (req, res, next) => {
-  const JWT_SECRET = process.env.JWT_SECRET || 'fallback_jwt_secret_please_change';
+  const JWT_SECRET = process.env.JWT_SECRET;
+  if (!JWT_SECRET) throw new Error('JWT_SECRET is not configured');
   try {
     try {
       await connectDB();
@@ -94,7 +97,8 @@ router.get('/me', async (req: AuthRequest, res) => {
 });
 
 router.put('/me', async (req: AuthRequest, res) => {
-  const JWT_SECRET = process.env.JWT_SECRET || 'fallback_jwt_secret_please_change';
+  const JWT_SECRET = process.env.JWT_SECRET;
+  if (!JWT_SECRET) throw new Error('JWT_SECRET is not configured');
   try {
     await connectDB();
     const { name, email, password, profilePhotoUrl } = req.body;
