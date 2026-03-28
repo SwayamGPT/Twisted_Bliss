@@ -37,8 +37,8 @@ app.get('/api/public/catalogue', async (req, res) => {
 });
 
 // API Routes
-app.use('/api', requireAuth as express.RequestHandler, apiRoutes);
 app.use('/api/buyer', buyerApiRoutes);
+app.use('/api', requireAuth as express.RequestHandler, apiRoutes);
 
 // Global Error Handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
