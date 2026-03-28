@@ -15,6 +15,9 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    build: {
+      chunkSizeWarningLimit: 1600,
+    },
     server: {
       port: 3000,
       hmr: process.env.DISABLE_HMR !== 'true',
