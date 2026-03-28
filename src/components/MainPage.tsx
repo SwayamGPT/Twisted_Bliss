@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Instagram, Heart, ShoppingBag, ArrowRight, ShoppingCart, X, Plus, Minus, ChevronDown, Search, User, Home, LayoutGrid } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = '';
 
 type ProductItem = {
     name: string;
