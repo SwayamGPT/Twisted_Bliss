@@ -33,7 +33,7 @@ interface ProductCardProps {
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
     const [qty, setQty] = useState(1);
     const [imgLoaded, setImgLoaded] = useState(false);
-    
+
     let currentPrice = product.retailPrice;
     if (qty >= 50 && product.priceMoq50Plus) currentPrice = product.priceMoq50Plus;
     else if (qty >= 20 && product.priceMoq20Plus) currentPrice = product.priceMoq20Plus;
@@ -129,7 +129,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }
                         <span className="text-sm font-semibold text-stone-600">Unit Price</span>
                         <span className="font-mono font-bold text-lg text-emerald-600">₹{currentPrice.toFixed(2)}</span>
                     </div>
-                    <button 
+                    <button
                         onClick={() => { onAddToCart(product, qty); setQty(1); }}
                         className="w-full py-3 bg-stone-900 hover:bg-stone-800 active:scale-[0.98] text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-md mt-auto"
                     >
@@ -211,12 +211,12 @@ export default function App() {
             if (item.quantity >= 50 && item.product.priceMoq50Plus) price = item.product.priceMoq50Plus;
             else if (item.quantity >= 20 && item.product.priceMoq20Plus) price = item.product.priceMoq20Plus;
             else if (item.quantity >= 10 && item.product.priceMoq10) price = item.product.priceMoq10;
-            
+
             const itemTotal = price * item.quantity;
             message += `- ${item.product.name} (SKU: ${item.product.sku}) x ${item.quantity} = ₹${itemTotal.toFixed(2)}\n`;
         });
         message += `\n*Total Order Value: ₹${getCartTotal().toFixed(2)}*`;
-        
+
         const encodedMessage = encodeURIComponent(message);
         window.open(`https://wa.me/918812881912?text=${encodedMessage}`, '_blank');
     };
@@ -228,10 +228,9 @@ export default function App() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
-                            <img src="/Twisted_Bliss_Logo.jpg" alt="Twisted Bliss Logo" className="w-10 h-10 rounded-xl shadow-sm object-cover border border-black/5" />
+                            <img src="/Twisted_Bliss_Logo.jpg" alt="Twisted Bliss Logo" className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl shadow-sm object-cover border border-black/5" />
                             <div>
                                 <h1 className="text-xl font-bold tracking-tight">Wholesale Catalogue</h1>
-                                <p className="text-xs text-stone-500 font-medium uppercase tracking-wider">Twisted Bliss</p>
                             </div>
                         </div>
 
@@ -248,7 +247,7 @@ export default function App() {
                                 <ShoppingCart className="w-5 h-5 text-stone-800" />
                                 <AnimatePresence>
                                     {cart.length > 0 && (
-                                        <motion.span 
+                                        <motion.span
                                             initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
                                             className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold shadow-sm"
                                         >
@@ -325,15 +324,15 @@ export default function App() {
                 {isCartOpen && (
                     <div className="fixed inset-0 z-[100] flex justify-end">
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-stone-900/60 backdrop-blur-sm" onClick={() => setIsCartOpen(false)}></motion.div>
-                        <motion.div 
+                        <motion.div
                             initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }}
                             className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col"
                         >
                             <div className="p-5 sm:p-6 border-b border-black/5 flex items-center justify-between bg-stone-50">
-                                <h2 className="text-xl font-bold flex items-center gap-2 text-stone-900"><ShoppingCart className="w-5 h-5"/> Your Cart</h2>
-                                <button onClick={() => setIsCartOpen(false)} className="p-2 hover:bg-stone-200 rounded-full transition-colors"><X className="w-5 h-5 text-stone-500"/></button>
+                                <h2 className="text-xl font-bold flex items-center gap-2 text-stone-900"><ShoppingCart className="w-5 h-5" /> Your Cart</h2>
+                                <button onClick={() => setIsCartOpen(false)} className="p-2 hover:bg-stone-200 rounded-full transition-colors"><X className="w-5 h-5 text-stone-500" /></button>
                             </div>
-                            
+
                             <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 sm:space-y-6">
                                 {cart.length === 0 ? (
                                     <div className="text-center text-stone-400 mt-20 flex flex-col items-center">
@@ -349,7 +348,7 @@ export default function App() {
                                         if (item.quantity >= 50 && item.product.priceMoq50Plus) unitPrice = item.product.priceMoq50Plus;
                                         else if (item.quantity >= 20 && item.product.priceMoq20Plus) unitPrice = item.product.priceMoq20Plus;
                                         else if (item.quantity >= 10 && item.product.priceMoq10) unitPrice = item.product.priceMoq10;
-                                        
+
                                         return (
                                             <motion.div layout key={item.product.id} className="flex gap-4 items-center bg-white p-3 rounded-2xl border border-black/5 shadow-sm">
                                                 <img src={item.product.image} alt={item.product.name} className="w-20 h-20 rounded-xl object-cover border border-black/5" />
@@ -373,7 +372,7 @@ export default function App() {
                                     })
                                 )}
                             </div>
-                            
+
                             {cart.length > 0 && (
                                 <div className="p-5 sm:p-6 bg-white border-t border-black/5 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-10">
                                     <div className="flex justify-between items-end mb-6">
@@ -387,7 +386,7 @@ export default function App() {
                                         <Phone className="w-5 h-5 fill-current" /> Order via WhatsApp
                                     </button>
                                     <p className="text-center text-[10px] uppercase font-bold tracking-widest text-stone-400 mt-4 leading-relaxed">
-                                        Generates a WhatsApp message<br/>to complete your order seamlessly.
+                                        Generates a WhatsApp message<br />to complete your order seamlessly.
                                     </p>
                                 </div>
                             )}
