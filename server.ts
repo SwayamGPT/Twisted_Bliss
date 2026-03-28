@@ -14,6 +14,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 import { Catalogue } from './backend/models/index.js';
+import { connectDB } from './backend/config/db.js';
 
 // Health Check (Public)
 app.get('/api/health', (req, res) => {
@@ -23,6 +24,7 @@ app.get('/api/health', (req, res) => {
 // Public Catalogue Items
 app.get('/api/public/catalogue', async (req, res) => {
   try {
+    await connectDB();
     const items = await Catalogue.find({});
     res.json(items);
   } catch (err) {

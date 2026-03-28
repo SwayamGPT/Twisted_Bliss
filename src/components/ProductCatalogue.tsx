@@ -150,15 +150,24 @@ export default function App() {
     useEffect(() => {
         // Fetch products straight from the Catalogue API
         fetch('/api/public/catalogue')
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                return res.json();
+            })
             .then(data => {
+                if (!Array.isArray(data)) {
+                    throw new Error("Received data is not an array");
+                }
                 const mappedProducts: Product[] = data.map((item: any) => ({
                     ...item,
                     id: item._id, // Map MongoDB _id onto id
                 }));
                 setProducts(mappedProducts);
             })
-            .catch(err => console.error("Failed to load catalogue from DB", err));
+            .catch(err => {
+                console.error("Failed to load catalogue from DB:", err);
+                // Optionally set an error state here to show to the user
+            });
     }, []);
 
     const filteredProducts = products.filter(product => {

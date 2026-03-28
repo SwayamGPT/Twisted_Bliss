@@ -4,8 +4,16 @@ let isConnected = false;
 let connectionPromise: Promise<void> | null = null;
 
 export const connectDB = async () => {
-  if (isConnected) return;
-  if (connectionPromise) return connectionPromise;
+  // Check if we already have a connection (readyState: 1 = connected, 2 = connecting)
+  if (mongoose.connection.readyState === 1) {
+    isConnected = true;
+    return;
+  }
+
+  if (connectionPromise) {
+    // If we're already connecting, wait for that promise
+    return connectionPromise;
+  }
 
   const uri = process.env.MONGODB_URI;
   if (!uri) {
@@ -16,9 +24,19 @@ export const connectDB = async () => {
     try {
       console.log('Attempting to connect to MongoDB...');
       if (mongoose.connection.listeners('connected').length === 0) {
-        mongoose.connection.on('connected', () => console.log('Mongoose connected to DB'));
-        mongoose.connection.on('error', (err) => console.error('Mongoose connection error:', err));
-        mongoose.connection.on('disconnected', () => console.log('Mongoose disconnected'));
+        mongoose.connection.on('connected', () => {
+          console.log('Mongoose connected to DB');
+          isConnected = true;
+        });
+        mongoose.connection.on('error', (err) => {
+          console.error('Mongoose connection error:', err);
+          isConnected = false;
+        });
+        mongoose.connection.on('disconnected', () => {
+          console.log('Mongoose disconnected');
+          isConnected = false;
+          connectionPromise = null;
+        });
       }
 
       await mongoose.connect(uri, {
@@ -31,6 +49,7 @@ export const connectDB = async () => {
       console.log('Successfully connected to MongoDB');
     } catch (error) {
       console.error('MongoDB connection error:', error);
+      isConnected = false;
       connectionPromise = null;
       throw error;
     }
