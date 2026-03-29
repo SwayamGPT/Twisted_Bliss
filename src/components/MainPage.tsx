@@ -254,8 +254,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
                     <p className="text-[10px] text-gray-500 mb-2 px-2 line-clamp-2 leading-tight">{product.description}</p>
                 )}
                 <div className="flex flex-col items-center gap-1">
-                    <div className=\"flex items-center justify-center gap-4\">
-                          <span className=\"text-sm font-bold text-[var(--color-floral-dark)]\">Rs. {product.singlePrice}.00</span>
+                    <div className="flex items-center justify-center gap-4">
+                          <span className="text-sm font-bold text-[var(--color-floral-dark)]">Rs. {product.singlePrice}.00</span>
                       </div>
                     {product.note && (
                         <p className="text-[10px] italic opacity-60 mt-1">{product.note}</p>
@@ -313,36 +313,36 @@ export default function App() {
             image: item.image,
           }));
 
-          const flowers = items.filter(i => !i.name.toLowerCase().includes(\"keychain\"));
-          const keychains = items.filter(i => i.name.toLowerCase().includes(\"keychain\"));
+          const flowers = items.filter(i => !i.name.toLowerCase().includes("keychain"));
+          const keychains = items.filter(i => i.name.toLowerCase().includes("keychain"));
 
           const newCollections: Collection[] = [];
           if (flowers.length > 0) {
             newCollections.push({
-              id: \"forever-flowers\",
-              title: \"Forever Flowers\",
-              description: \"Beautiful handcrafted crochet flowers.\",
-              image: flowers[0].image || \"\",
+              id: "forever-flowers",
+              title: "Forever Flowers",
+              description: "Beautiful handcrafted crochet flowers.",
+              image: flowers[0].image || "",
               items: flowers
             });
           }
           if (keychains.length > 0) {
             newCollections.push({
-              id: \"keychains\",
-              title: \"Keychains\",
-              description: \"Charming crochet keychains.\",
-              image: keychains[0].image || \"\",
+              id: "keychains",
+              title: "Keychains",
+              description: "Charming crochet keychains.",
+              image: keychains[0].image || "",
               items: keychains
             });
           }
           setCollections(newCollections);
         }
       } catch (error) {
-        console.error(\"Failed to load catalogue:\", error);
+        console.error("Failed to load catalogue:", error);
       }
     };
     fetchCatalogue();
-  }, [])
+    }, []);
 
     const allProducts: ProductWithMeta[] = collections.flatMap((c) =>
         c.items.map((i) => ({ ...i, collectionId: c.id, collectionTitle: c.title, image: normalizeImageUrl(i.image || c.image, fallbackImageByCollectionId.get(c.id)) }))
