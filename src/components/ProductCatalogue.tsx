@@ -177,11 +177,9 @@ export default function App() {
     }, []);
 
     const filteredProducts = products.filter(product => {
-        const hasMoq = (product.priceMoq10 && product.priceMoq10 > 0) || 
+                const hasMoq = (product.priceMoq10 && product.priceMoq10 > 0) || 
                        (product.priceMoq20Plus && product.priceMoq20Plus > 0) || 
                        (product.priceMoq50Plus && product.priceMoq50Plus > 0);
-        if (!hasMoq) return false;
-        const hasMoq = product.priceMoq10 > 0 || product.priceMoq20Plus > 0 || product.priceMoq50Plus > 0;
         if (!hasMoq) return false;
         return product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             product.sku.toLowerCase().includes(searchQuery.toLowerCase());
@@ -409,3 +407,4 @@ export default function App() {
         </div>
     );
 }
+
