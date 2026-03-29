@@ -85,6 +85,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }
                 </div>
 
                 <div className="space-y-2">
+                    {product.priceMoq10 > 0 && (
                     <div className="flex items-center justify-between p-3 rounded-xl bg-stone-50 border border-black/5">
                         <div className="flex items-center gap-2">
                             <Package className="w-4 h-4 text-stone-400" />
@@ -94,7 +95,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }
                             ₹{product.priceMoq10.toFixed(2)}
                         </span>
                     </div>
+                )}
 
+                    {product.priceMoq20Plus > 0 && (
                     <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-50 border border-emerald-100">
                         <div className="flex items-center gap-2">
                             <Tag className="w-4 h-4 text-emerald-500" />
@@ -104,7 +107,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }
                             ₹{product.priceMoq20Plus.toFixed(2)}
                         </span>
                     </div>
+                )}
 
+                    {product.priceMoq50Plus > 0 && (
                     <div className="flex items-center justify-between p-3 rounded-xl bg-violet-50 border border-violet-100">
                         <div className="flex items-center gap-2">
                             <Layers className="w-4 h-4 text-violet-500" />
@@ -114,6 +119,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }
                             ₹{product.priceMoq50Plus.toFixed(2)}
                         </span>
                     </div>
+                )}
                 </div>
 
                 <div className="mt-6 pt-4 border-t border-black/5 flex flex-col gap-3">
@@ -171,6 +177,12 @@ export default function App() {
     }, []);
 
     const filteredProducts = products.filter(product => {
+        const hasMoq = (product.priceMoq10 && product.priceMoq10 > 0) || 
+                       (product.priceMoq20Plus && product.priceMoq20Plus > 0) || 
+                       (product.priceMoq50Plus && product.priceMoq50Plus > 0);
+        if (!hasMoq) return false;
+        const hasMoq = product.priceMoq10 > 0 || product.priceMoq20Plus > 0 || product.priceMoq50Plus > 0;
+        if (!hasMoq) return false;
         return product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             product.sku.toLowerCase().includes(searchQuery.toLowerCase());
     });

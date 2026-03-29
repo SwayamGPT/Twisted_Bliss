@@ -168,15 +168,15 @@ export const CatalogueTab: React.FC<CatalogueTabProps> = ({
                     <div className="grid grid-cols-3 gap-2">
                       <div>
                         <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">MOQ 10+</label>
-                        <input type="number" required min="0" value={catPriceMoq10} onChange={e => setCatPriceMoq10(e.target.value ? Number(e.target.value) : '')} className="w-full px-2 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none transition-all font-mono text-sm shadow-sm" placeholder="0" />
+                        <input type="number" min="0" value={catPriceMoq10} onChange={e => setCatPriceMoq10(e.target.value ? Number(e.target.value) : '')} className="w-full px-2 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none transition-all font-mono text-sm shadow-sm" placeholder="0" />
                       </div>
                       <div>
                         <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">MOQ 20+</label>
-                        <input type="number" required min="0" value={catPriceMoq20Plus} onChange={e => setCatPriceMoq20Plus(e.target.value ? Number(e.target.value) : '')} className="w-full px-2 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-mono text-sm shadow-sm" placeholder="0" />
+                        <input type="number" min="0" value={catPriceMoq20Plus} onChange={e => setCatPriceMoq20Plus(e.target.value ? Number(e.target.value) : '')} className="w-full px-2 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-mono text-sm shadow-sm" placeholder="0" />
                       </div>
                       <div>
                         <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">MOQ 50+</label>
-                        <input type="number" required min="0" value={catPriceMoq50Plus} onChange={e => setCatPriceMoq50Plus(e.target.value ? Number(e.target.value) : '')} className="w-full px-2 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-violet-500 outline-none transition-all font-mono text-sm shadow-sm" placeholder="0" />
+                        <input type="number" min="0" value={catPriceMoq50Plus} onChange={e => setCatPriceMoq50Plus(e.target.value ? Number(e.target.value) : '')} className="w-full px-2 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-violet-500 outline-none transition-all font-mono text-sm shadow-sm" placeholder="0" />
                       </div>
                     </div>
                   </div>
