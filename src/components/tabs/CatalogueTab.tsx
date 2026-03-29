@@ -107,7 +107,7 @@ export const CatalogueTab: React.FC<CatalogueTabProps> = ({
                     <td className="p-4"><span className="font-mono font-semibold text-emerald-600">₹{item.priceMoq20Plus.toFixed(2)}</span></td>
                     <td className="p-4"><span className="font-mono font-semibold text-violet-600">₹{item.priceMoq50Plus.toFixed(2)}</span></td>
                     <td className="p-4 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-2 opacity-100 transition-opacity">
                         <button onClick={() => handleCatalogueEdit(item)} className="p-2 text-sky-600 hover:bg-sky-100 rounded-lg transition-colors"><Edit2 className="w-4 h-4" /></button>
                         <button onClick={() => handleCatalogueDelete(item.id!)} className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
                       </div>
@@ -199,3 +199,4 @@ export const CatalogueTab: React.FC<CatalogueTabProps> = ({
     </div>
   );
 };
+
