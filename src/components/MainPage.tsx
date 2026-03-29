@@ -189,120 +189,10 @@ const sanitizeCollections = (input: unknown): Collection[] => {
         .filter((collection): collection is Collection => collection !== null);
 };
 
-const fallbackCollections: Collection[] = [
-    {
-        id: 'tulip',
-        title: 'The Tulip Collection',
-        description: 'Classic, elegant, and perfect for any occasion.',
-        image: 'https://i.postimg.cc/SsQTQrrN/image.png',
-        items: [
-            { name: 'Tulip', singlePrice: 150, bouquetPrice: 130 },
-        ]
-    },
-    {
-        id: 'lily',
-        title: 'The Lily Collection',
-        description: 'Bold and beautiful statement pieces.',
-        image: 'https://i.postimg.cc/76qcGDx5/image.png',
-        items: [
-            { name: 'Lilly Jumbo', singlePrice: 299, bouquetPrice: 279 },
-        ]
-    },
-    {
-        id: 'Rose Stick',
-        title: 'Rose Collection',
-        description: 'Elegant crochet rose stick available in classic red.',
-        image: 'https://i.postimg.cc/KvJ2rJwc/Gemini-Generated-Image-aec491aec491aec4.png',
-        items: [
-            { name: 'Normal Rose', singlePrice: 199, bouquetPrice: 179 },
-        ]
-    },
-    {
-        id: 'shaded-rose',
-        title: 'Shaded Rose Collection',
-        description: 'Unique two-toned roses for a special touch.',
-        image: 'https://i.postimg.cc/CLCqJgY5/image.png',
-        items: [
-            { name: 'Shaded Rose', singlePrice: 219, bouquetPrice: 199 },
-        ]
-    },
-    {
-        id: 'Petal-rose',
-        title: 'Petal Rose Collection',
-        description: 'Detailed petal rose stick with gradient coloring for a natural look.',
-        image: 'https://i.postimg.cc/bvdkNVcd/Gemini-Generated-Image-24s7qc24s7qc24s7.png',
-        items: [
-            { name: 'Jumbo Rose', singlePrice: 269, bouquetPrice: 249 },
-        ]
-    },
-    {
-        id: 'thai-rose',
-        title: 'Thai Rose Collection',
-        description: 'Exquisite and intricate Thai-style roses.',
-        image: 'https://i.postimg.cc/wxQNQz93/image.png',
-        items: [
-            { name: 'Thai Rose', singlePrice: 389, bouquetPrice: 349 },
-        ]
-    },
-    {
-        id: 'sunflower',
-        title: 'The Sunflower Collection',
-        description: "Brighten someone's day with a pop of sunshine.",
-        image: 'https://i.postimg.cc/59mBgC3c/Gemini-Generated-Image-3lfycw3lfycw3lfy.png',
-        items: [
-            { name: 'Sunflower', singlePrice: 220, bouquetPrice: 199 },
-            {
-                name: 'Realistic sunflower',
-                singlePrice: 549,
-                bouquetPrice: 549,
-                image: 'https://i.postimg.cc/5yrmfcjd/Gemini-Generated-Image-7oozv97oozv97ooz.png',
-                description: 'Premium realistic sunflower stick with detailed center and textured leaves'
-            },
-        ]
-    },
-    {
-        id: 'forget-me-not-mini',
-        title: 'Forget-Me-Not Mini',
-        description: 'Delicate, charming, and sweet mini bouquet.',
-        image: 'https://i.postimg.cc/fy8hTyXr/image.png',
-        items: [
-            { name: 'Mini Bouquet (8 Flwrs)', singlePrice: 249, bouquetPrice: 249 },
-        ]
-    },
-    {
-        id: 'forget-me-not-jumbo',
-        title: 'Forget-Me-Not Jumbo',
-        description: 'A grand display of delicate forget-me-nots.',
-        image: 'https://i.postimg.cc/HxHwTkTF/image.png',
-        items: [
-            { name: 'Jumbo Bouquet (20 Flwrs)', singlePrice: 649, bouquetPrice: 649, note: 'Price for 1 bouquet' },
-        ]
-    },
-    {
-        id: 'avocado-keychain',
-        title: 'Avocado Couple Keychain',
-        description: 'Adorable matching avocado keychains for you and your loved one.',
-        image: 'https://i.postimg.cc/PqTddgvV/110683.jpg',
-        items: [
-            { name: 'Avocado Keychain', singlePrice: 199, bouquetPrice: 175 },
-        ]
-    },
-    {
-        id: 'football-keychain',
-        title: 'Customised Football Jersey',
-        description: 'Personalized football jersey keychains for the ultimate fan.',
-        image: 'https://i.postimg.cc/cJ0ddp8N/110685.jpg',
-        items: [
-            { name: 'Jersey (No Football)', singlePrice: 199, bouquetPrice: 199 },
-            { name: 'Jersey (With Football)', singlePrice: 249, bouquetPrice: 249 },
-        ]
-    }
-];
+const fallbackCollections: Collection[] = [];
 
 const getProductId = (name: string) => `product-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-const fallbackImageByCollectionId = new Map(
-    fallbackCollections.map((collection) => [collection.id, collection.image])
-);
+const fallbackImageByCollectionId = new Map<string, string>();
 
 const createEmptyAdminItem = (index: number): AdminOrderItem => ({
     id: `admin-item-${Date.now()}-${index}`,
@@ -364,16 +254,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
                     <p className="text-[10px] text-gray-500 mb-2 px-2 line-clamp-2 leading-tight">{product.description}</p>
                 )}
                 <div className="flex flex-col items-center gap-1">
-                    <div className="flex items-center justify-center gap-4">
-                        <span className="text-sm font-bold text-[var(--color-floral-dark)]">Rs. {product.singlePrice}.00</span>
-                        <span className="text-[10px] uppercase tracking-widest opacity-50">Single</span>
-                    </div>
-                    {product.bouquetPrice < product.singlePrice && (
-                        <div className="flex items-center justify-center gap-4">
-                            <span className="text-sm font-bold text-[var(--color-floral-accent)]">Rs. {product.bouquetPrice}.00</span>
-                            <span className="text-[10px] uppercase tracking-widest text-[var(--color-floral-accent)] font-bold">Bouquet (2+)</span>
-                        </div>
-                    )}
+                    <div className=\"flex items-center justify-center gap-4\">
+                          <span className=\"text-sm font-bold text-[var(--color-floral-dark)]\">Rs. {product.singlePrice}.00</span>
+                      </div>
                     {product.note && (
                         <p className="text-[10px] italic opacity-60 mt-1">{product.note}</p>
                     )}
@@ -416,23 +299,50 @@ export default function App() {
     }, []);
 
     useEffect(() => {
-        const fetchCollections = async () => {
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/buyer/collections`);
-                if (!response.ok) {
-                    return;
-                }
-                const data = await response.json();
-                const sanitizedCollections = sanitizeCollections(data);
-                if (sanitizedCollections.length > 0) {
-                    setCollections(sanitizedCollections);
-                }
-            } catch (error) {
-                console.error('Failed to load catalog:', error);
-            }
-        };
-        fetchCollections();
-    }, []);
+    const fetchCatalogue = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/public/catalogue`);
+        if (!response.ok) return;
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          const items: ProductItem[] = data.map((item: any) => ({
+            name: item.name,
+            singlePrice: item.retailPrice,
+            bouquetPrice: item.retailPrice,
+            description: item.description,
+            image: item.image,
+          }));
+
+          const flowers = items.filter(i => !i.name.toLowerCase().includes(\"keychain\"));
+          const keychains = items.filter(i => i.name.toLowerCase().includes(\"keychain\"));
+
+          const newCollections: Collection[] = [];
+          if (flowers.length > 0) {
+            newCollections.push({
+              id: \"forever-flowers\",
+              title: \"Forever Flowers\",
+              description: \"Beautiful handcrafted crochet flowers.\",
+              image: flowers[0].image || \"\",
+              items: flowers
+            });
+          }
+          if (keychains.length > 0) {
+            newCollections.push({
+              id: \"keychains\",
+              title: \"Keychains\",
+              description: \"Charming crochet keychains.\",
+              image: keychains[0].image || \"\",
+              items: keychains
+            });
+          }
+          setCollections(newCollections);
+        }
+      } catch (error) {
+        console.error(\"Failed to load catalogue:\", error);
+      }
+    };
+    fetchCatalogue();
+  }, [])
 
     const allProducts: ProductWithMeta[] = collections.flatMap((c) =>
         c.items.map((i) => ({ ...i, collectionId: c.id, collectionTitle: c.title, image: normalizeImageUrl(i.image || c.image, fallbackImageByCollectionId.get(c.id)) }))
@@ -1394,3 +1304,8 @@ export default function App() {
         </>
     );
 }
+
+
+
+
+
