@@ -1,15 +1,57 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Instagram, Heart, ShoppingBag, ArrowRight, ShoppingCart, X, Plus, Minus, ChevronDown, Search, User, Home, LayoutGrid } from 'lucide-react';
+import { Instagram, Heart, ArrowRight, ShoppingCart, X, Plus, Minus, ChevronDown, Search, User, Home, LayoutGrid } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 
 const API_BASE_URL = '';
+
+const styles = `
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Montserrat:wght@300;400;500&family=Great+Vibes&display=swap');
+
+:root {
+  --font-serif: "Cormorant Garamond", serif;
+  --font-sans: "Montserrat", sans-serif;
+  --font-calligraphy: "Great Vibes", cursive;
+  --color-floral-bg: #fdf2f8;
+  --color-floral-dark: #1e3a8a;
+  --color-floral-accent: #60a5fa;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-family: var(--font-sans);
+}
+
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+.font-sans {
+  font-family: var(--font-sans);
+}
+
+.font-calligraphy {
+  font-family: var(--font-calligraphy);
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+`;
 
 type ProductItem = {
     name: string;
     singlePrice: number;
     bouquetPrice: number;
     note?: string;
+    description?: string;
+    image?: string;
 };
 
 type Collection = {
@@ -120,6 +162,8 @@ const sanitizeCollections = (input: unknown): Collection[] => {
                             singlePrice,
                             bouquetPrice,
                             note: isNonEmptyString(item.note) ? item.note.trim() : undefined,
+                            description: isNonEmptyString(item.description) ? item.description.trim() : undefined,
+                            image: isNonEmptyString(item.image) ? item.image.trim() : undefined,
                         };
                     })
                     .filter((item): item is ProductItem => item !== null)
@@ -145,17 +189,6 @@ const sanitizeCollections = (input: unknown): Collection[] => {
         .filter((collection): collection is Collection => collection !== null);
 };
 
-const YarnBallIcon = ({ size = 24, className = "", strokeWidth = 2 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
-        <circle cx="11" cy="12" r="9" />
-        <path d="M5 8.5c2.5 1.5 4.5 4 5.5 7.5" />
-        <path d="M8 5.5c2.5 1.5 4.5 4 5.5 7.5" />
-        <path d="M3 12.5c2.5 1.5 4.5 4 5.5 7.5" />
-        <path d="M20 12h4" />
-        <path d="M20 12s0-3-3-3" />
-    </svg>
-);
-
 const fallbackCollections: Collection[] = [
     {
         id: 'tulip',
@@ -176,10 +209,10 @@ const fallbackCollections: Collection[] = [
         ]
     },
     {
-        id: 'normal-rose',
-        title: 'Normal Rose Collection',
-        description: 'Classic and beautiful everyday roses.',
-        image: 'https://i.postimg.cc/cCRrDQpY/image.png',
+        id: 'Rose Stick',
+        title: 'Rose Collection',
+        description: 'Elegant crochet rose stick available in classic red.',
+        image: 'https://i.postimg.cc/KvJ2rJwc/Gemini-Generated-Image-aec491aec491aec4.png',
         items: [
             { name: 'Normal Rose', singlePrice: 199, bouquetPrice: 179 },
         ]
@@ -194,10 +227,10 @@ const fallbackCollections: Collection[] = [
         ]
     },
     {
-        id: 'jumbo-rose',
-        title: 'Jumbo Rose Collection',
-        description: 'Extra large roses for maximum impact.',
-        image: 'https://i.postimg.cc/cCRrDQpY/image.png',
+        id: 'Petal-rose',
+        title: 'Petal Rose Collection',
+        description: 'Detailed petal rose stick with gradient coloring for a natural look.',
+        image: 'https://i.postimg.cc/bvdkNVcd/Gemini-Generated-Image-24s7qc24s7qc24s7.png',
         items: [
             { name: 'Jumbo Rose', singlePrice: 269, bouquetPrice: 249 },
         ]
@@ -215,10 +248,16 @@ const fallbackCollections: Collection[] = [
         id: 'sunflower',
         title: 'The Sunflower Collection',
         description: "Brighten someone's day with a pop of sunshine.",
-        image: 'https://i.postimg.cc/xCKfY96V/image.png',
+        image: 'https://i.postimg.cc/59mBgC3c/Gemini-Generated-Image-3lfycw3lfycw3lfy.png',
         items: [
             { name: 'Sunflower', singlePrice: 220, bouquetPrice: 199 },
-            { name: 'Jumbo Sunflower', singlePrice: 549, bouquetPrice: 549 },
+            {
+                name: 'Realistic sunflower',
+                singlePrice: 549,
+                bouquetPrice: 549,
+                image: 'https://i.postimg.cc/5yrmfcjd/Gemini-Generated-Image-7oozv97oozv97ooz.png',
+                description: 'Premium realistic sunflower stick with detailed center and textured leaves'
+            },
         ]
     },
     {
@@ -245,7 +284,7 @@ const fallbackCollections: Collection[] = [
         description: 'Adorable matching avocado keychains for you and your loved one.',
         image: 'https://i.postimg.cc/PqTddgvV/110683.jpg',
         items: [
-            { name: 'Avocado Keychain', singlePrice: 199, bouquetPrice: 175 }, // Pair is 349, so 174.5 each
+            { name: 'Avocado Keychain', singlePrice: 199, bouquetPrice: 175 },
         ]
     },
     {
@@ -320,7 +359,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
             </button>
 
             <div className="text-center pt-5">
-                <h3 className="text-base font-normal mb-2 text-[var(--color-floral-dark)] tracking-tight">{product.name}</h3>
+                <h3 className="text-base font-normal mb-1 text-[var(--color-floral-dark)] tracking-tight">{product.name}</h3>
+                {product.description && (
+                    <p className="text-[10px] text-gray-500 mb-2 px-2 line-clamp-2 leading-tight">{product.description}</p>
+                )}
                 <div className="flex flex-col items-center gap-1">
                     <div className="flex items-center justify-center gap-4">
                         <span className="text-sm font-bold text-[var(--color-floral-dark)]">Rs. {product.singlePrice}.00</span>
@@ -393,7 +435,7 @@ export default function App() {
     }, []);
 
     const allProducts: ProductWithMeta[] = collections.flatMap((c) =>
-        c.items.map((i) => ({ ...i, collectionId: c.id, collectionTitle: c.title, image: c.image }))
+        c.items.map((i) => ({ ...i, collectionId: c.id, collectionTitle: c.title, image: normalizeImageUrl(i.image || c.image, fallbackImageByCollectionId.get(c.id)) }))
     );
     const searchResults = searchQuery.trim() === '' ? [] : allProducts.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
@@ -659,692 +701,696 @@ export default function App() {
     };
 
     return (
-        <div className="min-h-screen bg-[var(--color-floral-bg)] text-[var(--color-floral-dark)] font-sans selection:bg-[var(--color-floral-accent)] selection:text-white">
-            <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
-            {/* Navigation */}
-            <nav className="fixed w-full z-50 bg-[var(--color-floral-bg)]/90 backdrop-blur-md border-b border-[var(--color-floral-dark)]/5">
-                <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-                    <div className="flex-1 hidden md:flex gap-6 relative group">
-                        <button className="text-xs tracking-[0.2em] uppercase hover:text-[var(--color-floral-accent)] transition-colors font-medium flex items-center gap-1 cursor-pointer">
-                            Categories <ChevronDown size={14} />
-                        </button>
-                        <div className="absolute top-full left-0 mt-2 w-56 bg-white/95 backdrop-blur-md border border-[var(--color-floral-dark)]/10 rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 flex flex-col overflow-hidden">
-                            <a href="#collections" className="px-5 py-4 text-xs tracking-[0.2em] uppercase hover:bg-[var(--color-floral-accent)]/10 hover:text-[var(--color-floral-accent)] transition-colors font-medium border-b border-[var(--color-floral-dark)]/5">Forever Flowers</a>
-                            <a href="#keychains" className="px-5 py-4 text-xs tracking-[0.2em] uppercase hover:bg-[var(--color-floral-accent)]/10 hover:text-[var(--color-floral-accent)] transition-colors font-medium">Keychains</a>
+        <>
+            <style dangerouslySetInnerHTML={{ __html: styles }} />
+            <div className="min-h-screen bg-[var(--color-floral-bg)] text-[var(--color-floral-dark)] font-sans selection:bg-[var(--color-floral-accent)] selection:text-white">
+                <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
+
+                {/* Navigation */}
+                <nav className="fixed w-full z-50 bg-[var(--color-floral-bg)]/90 backdrop-blur-md border-b border-[var(--color-floral-dark)]/5">
+                    <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+                        <div className="flex-1 hidden md:flex gap-6 relative group">
+                            <button className="text-xs tracking-[0.2em] uppercase hover:text-[var(--color-floral-accent)] transition-colors font-medium flex items-center gap-1 cursor-pointer">
+                                Categories <ChevronDown size={14} />
+                            </button>
+                            <div className="absolute top-full left-0 mt-2 w-56 bg-white/95 backdrop-blur-md border border-[var(--color-floral-dark)]/10 rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 flex flex-col overflow-hidden">
+                                <a href="#collections" className="px-5 py-4 text-xs tracking-[0.2em] uppercase hover:bg-[var(--color-floral-accent)]/10 hover:text-[var(--color-floral-accent)] transition-colors font-medium border-b border-[var(--color-floral-dark)]/5">Forever Flowers</a>
+                                <a href="#keychains" className="px-5 py-4 text-xs tracking-[0.2em] uppercase hover:bg-[var(--color-floral-accent)]/10 hover:text-[var(--color-floral-accent)] transition-colors font-medium">Keychains</a>
+                            </div>
+                        </div>
+                        <div className="flex-1 text-left md:text-center">
+                            <a href="#" className="font-calligraphy text-4xl md:text-5xl font-bold tracking-wide">Twisted Bliss</a>
+                        </div>
+                        <div className="flex-1 flex justify-end items-center gap-6">
+                            <a
+                                href="https://www.instagram.com/_twisted__blissss__/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 text-xs tracking-[0.2em] uppercase hover:text-[var(--color-floral-accent)] transition-colors font-medium"
+                            >
+                                <Instagram size={16} />
+                                <span className="hidden sm:inline">Instagram</span>
+                            </a>
+                            <button
+                                onClick={() => setIsCartOpen(true)}
+                                className="relative flex items-center gap-2 text-xs tracking-[0.2em] uppercase hover:text-[var(--color-floral-accent)] transition-colors font-medium cursor-pointer"
+                            >
+                                <ShoppingCart size={16} />
+                                <span className="hidden sm:inline">Cart</span>
+                                {cartItemCount > 0 && (
+                                    <span className="absolute -top-2 -right-2 bg-[var(--color-floral-accent)] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                                        {cartItemCount}
+                                    </span>
+                                )}
+                            </button>
                         </div>
                     </div>
-                    <div className="flex-1 text-left md:text-center">
-                        <a href="#" className="font-calligraphy text-4xl md:text-5xl font-bold tracking-wide">Twisted Bliss</a>
+                </nav>
+
+                {/* Hero Section */}
+                <section className="relative h-[70vh] flex items-center justify-center overflow-hidden">
+                    <div className="absolute inset-0 z-0">
+                        <img
+                            src="https://i.postimg.cc/6qmPTm6C/The-prettiest-order-by-mousumi-s-crochet-smallbusiness-crochetclawclip-crochethai-heic.jpg"
+                            alt="Beautiful floral arrangement"
+                            className="w-full h-full object-cover opacity-90"
+                            referrerPolicy="no-referrer"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-br from-pink-300/30 to-blue-300/30 mix-blend-multiply"></div>
+                        <div className="absolute inset-0 bg-black/20"></div>
                     </div>
-                    <div className="flex-1 flex justify-end items-center gap-6">
-                        <a
-                            href="https://www.instagram.com/_twisted__blissss__/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 text-xs tracking-[0.2em] uppercase hover:text-[var(--color-floral-accent)] transition-colors font-medium"
+
+                    <div className="relative z-10 text-center px-6 mt-20 w-full max-w-4xl mx-auto">
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 1, ease: "easeInOut" }}
+                            className="bg-white/10 backdrop-blur-md p-10 md:p-16 rounded-3xl border border-white/20 shadow-2xl"
                         >
-                            <Instagram size={16} />
-                            <span className="hidden sm:inline">Instagram</span>
-                        </a>
+                            <p className="text-white/90 text-sm md:text-base tracking-[0.3em] uppercase font-medium mb-6 drop-shadow-md">
+                                Get your Perfect Twist, from twisted bliss
+                            </p>
+                            <h1 className="font-serif text-5xl md:text-7xl lg:text-8xl text-white mb-8 drop-shadow-lg leading-tight">
+                                Everlasting <br /><span className="italic text-[var(--color-floral-accent)]">Elegance</span>
+                            </h1>
+                            <a
+                                href="#collections"
+                                className="inline-flex items-center gap-3 px-8 py-4 bg-white text-[var(--color-floral-dark)] rounded-full hover:bg-[var(--color-floral-accent)] hover:text-white transition-all duration-300 uppercase tracking-widest text-xs font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                            >
+                                Shop Collection <ArrowRight size={16} />
+                            </a>
+                        </motion.div>
+                    </div>
+                </section>
+
+                {/* Categories Grid */}
+                <section id="collections" className="pt-12 pb-20 px-6 max-w-7xl mx-auto bg-white/50 rounded-t-[3rem] border-t border-[var(--color-floral-dark)]/5">
+                    {/* Introductory Text */}
+                    <div className="max-w-5xl mx-auto text-center mb-24 px-6 pt-16">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.8 }}
+                        >
+                            <h2 className="font-serif text-4xl md:text-6xl text-[#2D3E6E] mb-8 leading-tight">
+                                Welcome to Twisted Bliss, <br />
+                                <span className="italic text-[var(--color-floral-accent)]">where every stitch tells a story.</span>
+                            </h2>
+                            <div className="w-16 h-[2px] bg-[var(--color-floral-accent)] mx-auto mb-12"></div>
+                            <p className="text-[#2D3E6E]/80 text-xl md:text-3xl font-medium leading-relaxed max-w-4xl mx-auto">
+                                We specialize in handcrafted crochet floral arrangements that bring joy and beauty to any occasion. Explore our categories below to find the perfect expression of your feelings.
+                            </p>
+                        </motion.div>
+                    </div>
+
+                    {/* Category Dropdown */}
+                    <div className="max-w-xs mx-auto mb-16 relative z-[60]">
+                        <button
+                            onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+                            className="w-full flex items-center justify-between px-6 py-4 bg-white border border-[var(--color-floral-dark)]/10 rounded-2xl shadow-sm hover:shadow-md transition-all group"
+                        >
+                            <span className="font-serif text-lg text-[var(--color-floral-dark)]">Select Category</span>
+                            <ChevronDown className={`transition-transform duration-300 ${isCategoryDropdownOpen ? 'rotate-180' : ''}`} size={20} />
+                        </button>
+
+                        <AnimatePresence>
+                            {isCategoryDropdownOpen && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 10 }}
+                                    className="absolute top-full left-0 w-full mt-2 bg-white rounded-2xl shadow-2xl border border-[var(--color-floral-dark)]/5 overflow-hidden py-2"
+                                >
+                                    {collections.map((collection) => (
+                                        <button
+                                            key={collection.id}
+                                            onClick={() => {
+                                                scrollToSection(collection.id);
+                                                setIsCategoryDropdownOpen(false);
+                                            }}
+                                            className="w-full text-left px-6 py-3 hover:bg-[var(--color-floral-accent)]/10 hover:text-[var(--color-floral-accent)] transition-colors font-medium text-[var(--color-floral-dark)]"
+                                        >
+                                            {collection.title}
+                                        </button>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+
+                    {/* Forever Flowers Section */}
+                    <motion.div
+                        id="forever-flowers"
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.8, ease: "easeInOut" }}
+                        className="text-center mb-16 pt-10"
+                    >
+                        <h2 className="font-serif text-4xl md:text-5xl mb-6">Forever Flowers</h2>
+                        <div className="w-12 h-[2px] bg-[var(--color-floral-accent)] mx-auto"></div>
+                    </motion.div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8 lg:gap-12">
+                        {collections.filter(c => !c.id.includes('keychain')).map((collection) => (
+                            <React.Fragment key={collection.id}>
+                                {collection.items.map((item, i) => (
+                                    <ProductCard
+                                        key={`${collection.id}-${i}`}
+                                        id={i === 0 ? collection.id : getProductId(item.name)}
+                                        product={{ ...item, image: item.image || collection.image, collectionId: collection.id, collectionTitle: collection.title }}
+                                        addToCart={addToCart}
+                                        categoryName={collection.title}
+                                    />
+                                ))}
+                            </React.Fragment>
+                        ))}
+                    </div>
+                </section>
+
+                {/* Keychains Grid */}
+                <section id="keychains" className="pt-12 pb-20 px-6 max-w-7xl mx-auto bg-white/50 border-t border-[var(--color-floral-dark)]/5">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.8, ease: "easeInOut" }}
+                        className="text-center mb-16 pt-10"
+                    >
+                        <h2 className="font-serif text-4xl md:text-5xl mb-6">Keychains</h2>
+                        <div className="w-12 h-[2px] bg-[var(--color-floral-accent)] mx-auto"></div>
+                    </motion.div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8 lg:gap-12">
+                        {collections.filter(c => c.id.includes('keychain')).map((collection) => (
+                            <React.Fragment key={collection.id}>
+                                {collection.items.map((item, i) => (
+                                    <ProductCard
+                                        key={`${collection.id}-${i}`}
+                                        id={i === 0 ? collection.id : getProductId(item.name)}
+                                        product={{ ...item, image: item.image || collection.image, collectionId: collection.id, collectionTitle: collection.title }}
+                                        addToCart={addToCart}
+                                        categoryName={collection.title}
+                                    />
+                                ))}
+                            </React.Fragment>
+                        ))}
+                    </div>
+                </section>
+
+                {/* Important Notes */}
+                <section className="py-24 bg-[var(--color-floral-accent)]/20 text-[var(--color-floral-dark)]">
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.8, ease: "easeInOut" }}
+                        className="max-w-5xl mx-auto px-6"
+                    >
+                        <div className="text-center mb-16">
+                            <Heart className="mx-auto mb-6 text-[var(--color-floral-accent)]" size={32} strokeWidth={1.5} />
+                            <h2 className="font-serif text-4xl mb-6">Important Notes</h2>
+                            <div className="w-12 h-[2px] bg-[var(--color-floral-accent)] mx-auto"></div>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-8">
+                            <div className="bg-white/40 p-10 rounded-3xl border border-[var(--color-floral-dark)]/5 hover:bg-white/60 transition-colors duration-300">
+                                <h3 className="font-serif text-2xl mb-4 text-[var(--color-floral-dark)]">Bouquet Pricing</h3>
+                                <p className="font-medium leading-relaxed opacity-90 text-sm md:text-base">
+                                    For all custom bouquets (except Forget-Me-Nots), the "Bouquet" price listed is the discounted rate per flower when you order multiple flowers bundled together.
+                                </p>
+                            </div>
+
+                            <div className="bg-white/40 p-10 rounded-3xl border border-[var(--color-floral-dark)]/5 hover:bg-white/60 transition-colors duration-300">
+                                <h3 className="font-serif text-2xl mb-4 text-[var(--color-floral-dark)]">Customization</h3>
+                                <p className="font-medium leading-relaxed opacity-90 text-sm md:text-base">
+                                    Want a mix of different flowers? We'd love to create a custom arrangement just for you! DM us on Instagram with your ideas and we'll bring them to life.
+                                </p>
+                            </div>
+                        </div>
+                    </motion.div>
+                </section>
+
+                {/* Footer */}
+                <footer className="py-16 px-6 bg-[var(--color-floral-bg)] text-center">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.8, ease: "easeInOut" }}
+                    >
+                        <h2 className="font-serif text-4xl mb-8">Twisted Bliss</h2>
+                        <div className="flex justify-center gap-6 mb-10">
+                            <a
+                                href="https://www.instagram.com/_twisted__blissss__/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-14 h-14 rounded-full border border-[var(--color-floral-dark)]/20 flex items-center justify-center hover:bg-[var(--color-floral-dark)] hover:text-[var(--color-floral-bg)] transition-all duration-300 hover:scale-110"
+                            >
+                                <Instagram size={24} strokeWidth={1.5} />
+                            </a>
+                        </div>
+                        <p className="text-xs uppercase tracking-[0.2em] opacity-40 font-medium">
+                            &copy; {new Date().getFullYear()} Twisted Bliss. All rights reserved.
+                        </p>
+                    </motion.div>
+                </footer>
+
+                {/* Cart Sidebar */}
+                <AnimatePresence>
+                    {isCartOpen && (
+                        <>
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[60]"
+                                onClick={() => setIsCartOpen(false)}
+                            />
+                            <motion.div
+                                initial={{ x: '100%' }}
+                                animate={{ x: 0 }}
+                                exit={{ x: '100%' }}
+                                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                                className="fixed top-0 right-0 h-full w-full max-w-md bg-[var(--color-floral-bg)] shadow-2xl z-[70] flex flex-col border-l border-[var(--color-floral-dark)]/10"
+                            >
+                                <div className="p-6 border-b border-[var(--color-floral-dark)]/10 flex justify-between items-center bg-white/50">
+                                    <h2 className="font-serif text-2xl">Your Cart</h2>
+                                    <button onClick={() => setIsCartOpen(false)} className="p-2 hover:bg-black/5 rounded-full transition-colors cursor-pointer">
+                                        <X size={20} />
+                                    </button>
+                                </div>
+
+                                <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                                    {cart.length === 0 ? (
+                                        <div className="text-center opacity-50 font-light mt-10 flex flex-col items-center">
+                                            <ShoppingCart size={48} className="mb-4 opacity-50" />
+                                            <p>Your cart is empty.</p>
+                                        </div>
+                                    ) : (
+                                        cart.map((item, i) => (
+                                            <div key={i} className="flex justify-between items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-[var(--color-floral-dark)]/5">
+                                                <div className="flex-1">
+                                                    <p className="font-medium text-sm">{item.name}</p>
+                                                    <p className="text-xs opacity-60">
+                                                        ₹{item.quantity > 1 ? item.bouquetPrice : item.singlePrice} {item.quantity > 1 ? '(Bouquet Price)' : '(Single Price)'}
+                                                    </p>
+                                                </div>
+                                                <div className="flex items-center gap-3 bg-[var(--color-floral-bg)] rounded-full px-2 py-1 border border-[var(--color-floral-dark)]/10">
+                                                    <button onClick={() => updateQuantity(item.name, -1)} className="p-1 hover:text-[var(--color-floral-accent)] cursor-pointer"><Minus size={14} /></button>
+                                                    <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
+                                                    <button onClick={() => updateQuantity(item.name, 1)} className="p-1 hover:text-[var(--color-floral-accent)] cursor-pointer"><Plus size={14} /></button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+
+                                {cart.length > 0 && (
+                                    <div className="p-6 bg-white border-t border-[var(--color-floral-dark)]/10">
+                                        <div className="flex justify-between items-center mb-6">
+                                            <span className="font-serif text-xl">Total</span>
+                                            <span className="font-serif text-2xl text-[var(--color-floral-accent)]">₹{cartTotal}</span>
+                                        </div>
+                                        <button
+                                            onClick={handleCheckout}
+                                            disabled={isPaying}
+                                            className="w-full py-4 bg-[var(--color-floral-dark)] text-white rounded-full flex items-center justify-center gap-2 hover:bg-[var(--color-floral-accent)] transition-colors uppercase tracking-widest text-xs font-bold shadow-lg disabled:opacity-60"
+                                        >
+                                            {isPaying ? 'Processing...' : 'Pay with Razorpay'} <ArrowRight size={16} />
+                                        </button>
+                                        <p className="text-[10px] text-center mt-3 opacity-50 uppercase tracking-widest">
+                                            Secure checkout enabled for your cart.
+                                        </p>
+                                    </div>
+                                )}
+                            </motion.div>
+                        </>
+                    )}
+                </AnimatePresence>
+                {/* Bottom Navigation */}
+                <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 z-50 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+                    <div className="max-w-7xl mx-auto flex justify-around items-center h-20 px-4">
+                        <button
+                            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                            className="flex flex-col items-center gap-1.5 text-[#2D3E6E] hover:scale-110 transition-transform cursor-pointer"
+                        >
+                            <Home size={28} strokeWidth={2.5} />
+                            <span className="text-[11px] font-black uppercase tracking-wider">Home</span>
+                        </button>
+                        <button
+                            onClick={() => setIsSearchOpen(true)}
+                            className="flex flex-col items-center gap-1.5 text-[#8E97B0] hover:text-[#2D3E6E] hover:scale-110 transition-transform cursor-pointer"
+                        >
+                            <Search size={28} strokeWidth={2.5} />
+                            <span className="text-[11px] font-black uppercase tracking-wider">Search</span>
+                        </button>
+                        <button
+                            onClick={() => scrollToSection('collections')}
+                            className="flex flex-col items-center gap-1.5 text-[#8E97B0] hover:text-[#2D3E6E] hover:scale-110 transition-transform cursor-pointer"
+                        >
+                            <LayoutGrid size={28} strokeWidth={2.5} />
+                            <span className="text-[11px] font-black uppercase tracking-wider">Categories</span>
+                        </button>
+                        <button
+                            onClick={() => setIsAccountOpen(true)}
+                            className="flex flex-col items-center gap-1.5 text-[#8E97B0] hover:text-[#2D3E6E] hover:scale-110 transition-transform cursor-pointer"
+                        >
+                            <User size={28} strokeWidth={2.5} />
+                            <span className="text-[11px] font-black uppercase tracking-wider">Account</span>
+                        </button>
                         <button
                             onClick={() => setIsCartOpen(true)}
-                            className="relative flex items-center gap-2 text-xs tracking-[0.2em] uppercase hover:text-[var(--color-floral-accent)] transition-colors font-medium cursor-pointer"
+                            className="flex flex-col items-center gap-1.5 text-[#8E97B0] hover:text-[#2D3E6E] hover:scale-110 transition-transform cursor-pointer relative"
                         >
-                            <ShoppingCart size={16} />
-                            <span className="hidden sm:inline">Cart</span>
+                            <ShoppingCart size={28} strokeWidth={2.5} />
+                            <span className="text-[11px] font-black uppercase tracking-wider">Cart</span>
                             {cartItemCount > 0 && (
-                                <span className="absolute -top-2 -right-2 bg-[var(--color-floral-accent)] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                                <span className="absolute -top-1 -right-1 bg-[#2D3E6E] text-white text-[9px] w-5 h-5 rounded-full flex items-center justify-center font-black shadow-lg">
                                     {cartItemCount}
                                 </span>
                             )}
                         </button>
                     </div>
                 </div>
-            </nav>
 
-            {/* Hero Section */}
-            <section className="relative h-[70vh] flex items-center justify-center overflow-hidden">
-                <div className="absolute inset-0 z-0">
-                    <img
-                        src="https://i.postimg.cc/6qmPTm6C/The-prettiest-order-by-mousumi-s-crochet-smallbusiness-crochetclawclip-crochethai-heic.jpg"
-                        alt="Beautiful floral arrangement"
-                        className="w-full h-full object-cover opacity-90"
-                        referrerPolicy="no-referrer"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-br from-pink-300/30 to-blue-300/30 mix-blend-multiply"></div>
-                    <div className="absolute inset-0 bg-black/20"></div>
-                </div>
-
-                <div className="relative z-10 text-center px-6 mt-20 w-full max-w-4xl mx-auto">
-                    <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 1, ease: "easeInOut" }}
-                        className="bg-white/10 backdrop-blur-md p-10 md:p-16 rounded-3xl border border-white/20 shadow-2xl"
-                    >
-                        <p className="text-white/90 text-sm md:text-base tracking-[0.3em] uppercase font-medium mb-6 drop-shadow-md">
-                            Get your Perfect Twist, from twisted bliss
-                        </p>
-                        <h1 className="font-serif text-5xl md:text-7xl lg:text-8xl text-white mb-8 drop-shadow-lg leading-tight">
-                            Everlasting <br /><span className="italic text-[var(--color-floral-accent)]">Elegance</span>
-                        </h1>
-                        <a
-                            href="#collections"
-                            className="inline-flex items-center gap-3 px-8 py-4 bg-white text-[var(--color-floral-dark)] rounded-full hover:bg-[var(--color-floral-accent)] hover:text-white transition-all duration-300 uppercase tracking-widest text-xs font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-                        >
-                            Shop Collection <ArrowRight size={16} />
-                        </a>
-                    </motion.div>
-                </div>
-            </section>
-
-            {/* Categories Grid */}
-            <section id="collections" className="pt-12 pb-20 px-6 max-w-7xl mx-auto bg-white/50 rounded-t-[3rem] border-t border-[var(--color-floral-dark)]/5">
-                {/* Introductory Text */}
-                <div className="max-w-5xl mx-auto text-center mb-24 px-6 pt-16">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.8 }}
-                    >
-                        <h2 className="font-serif text-4xl md:text-6xl text-[#2D3E6E] mb-8 leading-tight">
-                            Welcome to Twisted Bliss, <br />
-                            <span className="italic text-[var(--color-floral-accent)]">where every stitch tells a story.</span>
-                        </h2>
-                        <div className="w-16 h-[2px] bg-[var(--color-floral-accent)] mx-auto mb-12"></div>
-                        <p className="text-[#2D3E6E]/80 text-xl md:text-3xl font-medium leading-relaxed max-w-4xl mx-auto">
-                            We specialize in handcrafted crochet floral arrangements that bring joy and beauty to any occasion. Explore our categories below to find the perfect expression of your feelings.
-                        </p>
-                    </motion.div>
-                </div>
-
-                {/* Category Dropdown */}
-                <div className="max-w-xs mx-auto mb-16 relative z-[60]">
-                    <button
-                        onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
-                        className="w-full flex items-center justify-between px-6 py-4 bg-white border border-[var(--color-floral-dark)]/10 rounded-2xl shadow-sm hover:shadow-md transition-all group"
-                    >
-                        <span className="font-serif text-lg text-[var(--color-floral-dark)]">Select Category</span>
-                        <ChevronDown className={`transition-transform duration-300 ${isCategoryDropdownOpen ? 'rotate-180' : ''}`} size={20} />
-                    </button>
-
-                    <AnimatePresence>
-                        {isCategoryDropdownOpen && (
+                {/* Search Modal */}
+                <AnimatePresence>
+                    {isSearchOpen && (
+                        <>
                             <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: 10 }}
-                                className="absolute top-full left-0 w-full mt-2 bg-white rounded-2xl shadow-2xl border border-[var(--color-floral-dark)]/5 overflow-hidden py-2"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="fixed inset-0 bg-black/40 backdrop-blur-md z-[80]"
+                                onClick={() => setIsSearchOpen(false)}
+                            />
+                            <motion.div
+                                initial={{ y: '-100%' }}
+                                animate={{ y: 0 }}
+                                exit={{ y: '-100%' }}
+                                className="fixed top-0 left-0 w-full bg-white z-[90] p-8 shadow-2xl"
                             >
-                                {collections.map((collection) => (
-                                    <button
-                                        key={collection.id}
-                                        onClick={() => {
-                                            scrollToSection(collection.id);
-                                            setIsCategoryDropdownOpen(false);
-                                        }}
-                                        className="w-full text-left px-6 py-3 hover:bg-[var(--color-floral-accent)]/10 hover:text-[var(--color-floral-accent)] transition-colors font-medium text-[var(--color-floral-dark)]"
-                                    >
-                                        {collection.title}
-                                    </button>
-                                ))}
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
-
-                {/* Forever Flowers Section */}
-                <motion.div
-                    id="forever-flowers"
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.8, ease: "easeInOut" }}
-                    className="text-center mb-16 pt-10"
-                >
-                    <h2 className="font-serif text-4xl md:text-5xl mb-6">Forever Flowers</h2>
-                    <div className="w-12 h-[2px] bg-[var(--color-floral-accent)] mx-auto"></div>
-                </motion.div>
-
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8 lg:gap-12">
-                    {collections.filter(c => !c.id.includes('keychain')).map((collection) => (
-                        <React.Fragment key={collection.id}>
-                            {collection.items.map((item, i) => (
-                                <ProductCard
-                                    key={`${collection.id}-${i}`}
-                                    id={i === 0 ? collection.id : getProductId(item.name)}
-                                    product={{ ...item, image: collection.image, collectionId: collection.id, collectionTitle: collection.title }}
-                                    addToCart={addToCart}
-                                    categoryName={collection.title}
-                                />
-                            ))}
-                        </React.Fragment>
-                    ))}
-                </div>
-            </section>
-
-            {/* Keychains Grid */}
-            <section id="keychains" className="pt-12 pb-20 px-6 max-w-7xl mx-auto bg-white/50 border-t border-[var(--color-floral-dark)]/5">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.8, ease: "easeInOut" }}
-                    className="text-center mb-16 pt-10"
-                >
-                    <h2 className="font-serif text-4xl md:text-5xl mb-6">Keychains</h2>
-                    <div className="w-12 h-[2px] bg-[var(--color-floral-accent)] mx-auto"></div>
-                </motion.div>
-
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8 lg:gap-12">
-                    {collections.filter(c => c.id.includes('keychain')).map((collection) => (
-                        <React.Fragment key={collection.id}>
-                            {collection.items.map((item, i) => (
-                                <ProductCard
-                                    key={`${collection.id}-${i}`}
-                                    id={i === 0 ? collection.id : getProductId(item.name)}
-                                    product={{ ...item, image: collection.image, collectionId: collection.id, collectionTitle: collection.title }}
-                                    addToCart={addToCart}
-                                    categoryName={collection.title}
-                                />
-                            ))}
-                        </React.Fragment>
-                    ))}
-                </div>
-            </section>
-
-            {/* Important Notes */}
-            <section className="py-24 bg-[var(--color-floral-accent)]/20 text-[var(--color-floral-dark)]">
-                <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.8, ease: "easeInOut" }}
-                    className="max-w-5xl mx-auto px-6"
-                >
-                    <div className="text-center mb-16">
-                        <Heart className="mx-auto mb-6 text-[var(--color-floral-accent)]" size={32} strokeWidth={1.5} />
-                        <h2 className="font-serif text-4xl mb-6">Important Notes</h2>
-                        <div className="w-12 h-[2px] bg-[var(--color-floral-accent)] mx-auto"></div>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-8">
-                        <div className="bg-white/40 p-10 rounded-3xl border border-[var(--color-floral-dark)]/5 hover:bg-white/60 transition-colors duration-300">
-                            <h3 className="font-serif text-2xl mb-4 text-[var(--color-floral-dark)]">Bouquet Pricing</h3>
-                            <p className="font-medium leading-relaxed opacity-90 text-sm md:text-base">
-                                For all custom bouquets (except Forget-Me-Nots), the "Bouquet" price listed is the discounted rate per flower when you order multiple flowers bundled together.
-                            </p>
-                        </div>
-
-                        <div className="bg-white/40 p-10 rounded-3xl border border-[var(--color-floral-dark)]/5 hover:bg-white/60 transition-colors duration-300">
-                            <h3 className="font-serif text-2xl mb-4 text-[var(--color-floral-dark)]">Customization</h3>
-                            <p className="font-medium leading-relaxed opacity-90 text-sm md:text-base">
-                                Want a mix of different flowers? We'd love to create a custom arrangement just for you! DM us on Instagram with your ideas and we'll bring them to life.
-                            </p>
-                        </div>
-                    </div>
-                </motion.div>
-            </section>
-
-            {/* Footer */}
-            <footer className="py-16 px-6 bg-[var(--color-floral-bg)] text-center">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.8, ease: "easeInOut" }}
-                >
-                    <h2 className="font-serif text-4xl mb-8">Twisted Bliss</h2>
-                    <div className="flex justify-center gap-6 mb-10">
-                        <a
-                            href="https://www.instagram.com/_twisted__blissss__/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-14 h-14 rounded-full border border-[var(--color-floral-dark)]/20 flex items-center justify-center hover:bg-[var(--color-floral-dark)] hover:text-[var(--color-floral-bg)] transition-all duration-300 hover:scale-110"
-                        >
-                            <Instagram size={24} strokeWidth={1.5} />
-                        </a>
-                    </div>
-                    <p className="text-xs uppercase tracking-[0.2em] opacity-40 font-medium">
-                        &copy; {new Date().getFullYear()} Twisted Bliss. All rights reserved.
-                    </p>
-                </motion.div>
-            </footer>
-
-            {/* Cart Sidebar */}
-            <AnimatePresence>
-                {isCartOpen && (
-                    <>
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[60]"
-                            onClick={() => setIsCartOpen(false)}
-                        />
-                        <motion.div
-                            initial={{ x: '100%' }}
-                            animate={{ x: 0 }}
-                            exit={{ x: '100%' }}
-                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                            className="fixed top-0 right-0 h-full w-full max-w-md bg-[var(--color-floral-bg)] shadow-2xl z-[70] flex flex-col border-l border-[var(--color-floral-dark)]/10"
-                        >
-                            <div className="p-6 border-b border-[var(--color-floral-dark)]/10 flex justify-between items-center bg-white/50">
-                                <h2 className="font-serif text-2xl">Your Cart</h2>
-                                <button onClick={() => setIsCartOpen(false)} className="p-2 hover:bg-black/5 rounded-full transition-colors cursor-pointer">
-                                    <X size={20} />
-                                </button>
-                            </div>
-
-                            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                                {cart.length === 0 ? (
-                                    <div className="text-center opacity-50 font-light mt-10 flex flex-col items-center">
-                                        <ShoppingCart size={48} className="mb-4 opacity-50" />
-                                        <p>Your cart is empty.</p>
-                                    </div>
-                                ) : (
-                                    cart.map((item, i) => (
-                                        <div key={i} className="flex justify-between items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-[var(--color-floral-dark)]/5">
-                                            <div className="flex-1">
-                                                <p className="font-medium text-sm">{item.name}</p>
-                                                <p className="text-xs opacity-60">
-                                                    ₹{item.quantity > 1 ? item.bouquetPrice : item.singlePrice} {item.quantity > 1 ? '(Bouquet Price)' : '(Single Price)'}
-                                                </p>
-                                            </div>
-                                            <div className="flex items-center gap-3 bg-[var(--color-floral-bg)] rounded-full px-2 py-1 border border-[var(--color-floral-dark)]/10">
-                                                <button onClick={() => updateQuantity(item.name, -1)} className="p-1 hover:text-[var(--color-floral-accent)] cursor-pointer"><Minus size={14} /></button>
-                                                <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
-                                                <button onClick={() => updateQuantity(item.name, 1)} className="p-1 hover:text-[var(--color-floral-accent)] cursor-pointer"><Plus size={14} /></button>
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-
-                            {cart.length > 0 && (
-                                <div className="p-6 bg-white border-t border-[var(--color-floral-dark)]/10">
-                                    <div className="flex justify-between items-center mb-6">
-                                        <span className="font-serif text-xl">Total</span>
-                                        <span className="font-serif text-2xl text-[var(--color-floral-accent)]">₹{cartTotal}</span>
-                                    </div>
-                                    <button
-                                        onClick={handleCheckout}
-                                        disabled={isPaying}
-                                        className="w-full py-4 bg-[var(--color-floral-dark)] text-white rounded-full flex items-center justify-center gap-2 hover:bg-[var(--color-floral-accent)] transition-colors uppercase tracking-widest text-xs font-bold shadow-lg disabled:opacity-60"
-                                    >
-                                        {isPaying ? 'Processing...' : 'Pay with Razorpay'} <ArrowRight size={16} />
-                                    </button>
-                                    <p className="text-[10px] text-center mt-3 opacity-50 uppercase tracking-widest">
-                                        Secure checkout enabled for your cart.
-                                    </p>
-                                </div>
-                            )}
-                        </motion.div>
-                    </>
-                )}
-            </AnimatePresence>
-            {/* Bottom Navigation */}
-            <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 z-50 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
-                <div className="max-w-7xl mx-auto flex justify-around items-center h-20 px-4">
-                    <button
-                        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                        className="flex flex-col items-center gap-1.5 text-[#2D3E6E] hover:scale-110 transition-transform cursor-pointer"
-                    >
-                        <Home size={28} strokeWidth={2.5} />
-                        <span className="text-[11px] font-black uppercase tracking-wider">Home</span>
-                    </button>
-                    <button
-                        onClick={() => setIsSearchOpen(true)}
-                        className="flex flex-col items-center gap-1.5 text-[#8E97B0] hover:text-[#2D3E6E] hover:scale-110 transition-transform cursor-pointer"
-                    >
-                        <Search size={28} strokeWidth={2.5} />
-                        <span className="text-[11px] font-black uppercase tracking-wider">Search</span>
-                    </button>
-                    <button
-                        onClick={() => scrollToSection('collections')}
-                        className="flex flex-col items-center gap-1.5 text-[#8E97B0] hover:text-[#2D3E6E] hover:scale-110 transition-transform cursor-pointer"
-                    >
-                        <LayoutGrid size={28} strokeWidth={2.5} />
-                        <span className="text-[11px] font-black uppercase tracking-wider">Categories</span>
-                    </button>
-                    <button
-                        onClick={() => setIsAccountOpen(true)}
-                        className="flex flex-col items-center gap-1.5 text-[#8E97B0] hover:text-[#2D3E6E] hover:scale-110 transition-transform cursor-pointer"
-                    >
-                        <User size={28} strokeWidth={2.5} />
-                        <span className="text-[11px] font-black uppercase tracking-wider">Account</span>
-                    </button>
-                    <button
-                        onClick={() => setIsCartOpen(true)}
-                        className="flex flex-col items-center gap-1.5 text-[#8E97B0] hover:text-[#2D3E6E] hover:scale-110 transition-transform cursor-pointer relative"
-                    >
-                        <ShoppingCart size={28} strokeWidth={2.5} />
-                        <span className="text-[11px] font-black uppercase tracking-wider">Cart</span>
-                        {cartItemCount > 0 && (
-                            <span className="absolute -top-1 -right-1 bg-[#2D3E6E] text-white text-[9px] w-5 h-5 rounded-full flex items-center justify-center font-black shadow-lg">
-                                {cartItemCount}
-                            </span>
-                        )}
-                    </button>
-                </div>
-            </div>
-
-            {/* Search Modal */}
-            <AnimatePresence>
-                {isSearchOpen && (
-                    <>
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="fixed inset-0 bg-black/40 backdrop-blur-md z-[80]"
-                            onClick={() => setIsSearchOpen(false)}
-                        />
-                        <motion.div
-                            initial={{ y: '-100%' }}
-                            animate={{ y: 0 }}
-                            exit={{ y: '-100%' }}
-                            className="fixed top-0 left-0 w-full bg-white z-[90] p-8 shadow-2xl"
-                        >
-                            <div className="max-w-3xl mx-auto flex items-center gap-4">
-                                <Search className="text-gray-400" size={24} />
-                                <input
-                                    autoFocus
-                                    type="text"
-                                    placeholder="Search for flowers, keychains..."
-                                    className="flex-1 text-xl outline-none font-serif"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                />
-                                <button onClick={() => setIsSearchOpen(false)} className="p-2 hover:bg-gray-100 rounded-full">
-                                    <X size={24} />
-                                </button>
-                            </div>
-
-                            {searchResults.length > 0 && (
-                                <div className="max-w-3xl mx-auto mt-8 max-h-[60vh] overflow-y-auto no-scrollbar">
-                                    <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">Search Results ({searchResults.length})</p>
-                                    <div className="grid gap-2">
-                                        {searchResults.map((product, idx) => (
-                                            <button
-                                                key={idx}
-                                                onClick={() => {
-                                                    scrollToSection(getProductId(product.name));
-                                                    setIsSearchOpen(false);
-                                                    setSearchQuery('');
-                                                }}
-                                                className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors rounded-2xl text-left group"
-                                            >
-                                                <div className="w-20 h-20 overflow-hidden rounded-xl bg-gray-100">
-                                                    <img
-                                                        src={product.image}
-                                                        alt={product.name}
-                                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                                        onError={(event) => {
-                                                            const fallbackImage = fallbackImageByCollectionId.get(product.collectionId);
-                                                            if (fallbackImage && event.currentTarget.src !== fallbackImage) {
-                                                                event.currentTarget.src = fallbackImage;
-                                                            }
-                                                        }}
-                                                    />
-                                                </div>
-                                                <div className="flex-1">
-                                                    <h4 className="font-serif text-lg text-gray-900">{product.name}</h4>
-                                                    <p className="text-sm text-gray-500 uppercase tracking-widest font-bold">{product.collectionTitle}</p>
-                                                    <p className="text-[var(--color-floral-accent)] font-bold mt-1">₹{product.singlePrice}</p>
-                                                </div>
-                                                <ArrowRight size={20} className="text-gray-300 group-hover:text-[var(--color-floral-accent)] transition-colors" />
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {searchQuery.trim() !== '' && searchResults.length === 0 && (
-                                <div className="max-w-3xl mx-auto mt-20 text-center py-12">
-                                    <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                                        <Search size={32} className="text-gray-300" />
-                                    </div>
-                                    <h3 className="font-serif text-2xl mb-2">No results found</h3>
-                                    <p className="text-gray-500">We couldn't find anything matching "{searchQuery}"</p>
-                                </div>
-                            )}
-                        </motion.div>
-                    </>
-                )}
-            </AnimatePresence>
-
-            {/* Account Modal */}
-            <AnimatePresence>
-                {isAccountOpen && (
-                    <>
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="fixed inset-0 bg-black/40 backdrop-blur-md z-[80]"
-                            onClick={() => setIsAccountOpen(false)}
-                        />
-                        <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white z-[90] p-10 rounded-[2rem] shadow-2xl"
-                        >
-                            <div className="text-center">
-                                <div className="w-20 h-20 bg-[#2D3E6E]/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                                    <User size={40} className="text-[#2D3E6E]" />
-                                </div>
-                                <h2 className="font-serif text-3xl mb-4">{authUser ? `Hi, ${authUser.name}` : isLoginMode ? 'Welcome Back' : 'Create Account'}</h2>
-                                {authUser ? (
-                                    <div className="space-y-4">
-                                        <p className="text-gray-500">{authUser.email} ({authUser.role})</p>
-                                        {authUser.role === "admin" && (
-                                            <button
-                                                onClick={() => {
-                                                    setIsAccountOpen(false);
-                                                    setIsAdminPanelOpen(true);
-                                                }}
-                                                className="w-full py-4 bg-white text-[#2D3E6E] rounded-xl font-bold uppercase tracking-widest border border-[#2D3E6E]/20 hover:bg-[#2D3E6E]/10 transition-all shadow-sm"
-                                            >
-                                                Open Admin Panel
-                                            </button>
-                                        )}
-                                        <button
-                                            onClick={() => {
-                                                localStorage.removeItem('twisted_bliss_token');
-                                                localStorage.removeItem('twisted_bliss_name');
-                                                localStorage.removeItem('twisted_bliss_email');
-                                                localStorage.removeItem('twisted_bliss_role');
-                                                setAuthUser(null);
-                                                setIsAdminPanelOpen(false);
-                                                setIsAccountOpen(false);
-                                            }}
-                                            className="w-full py-4 bg-[#2D3E6E] text-white rounded-xl font-bold uppercase tracking-widest hover:bg-[#1A264D] transition-all shadow-lg"
-                                        >
-                                            Logout
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <p className="text-gray-500 mb-8">{isLoginMode ? 'Sign in to track your orders and manage your account.' : 'Register to save your profile and checkout faster.'}</p>
-                                        <div className="space-y-4">
-                                            {!isLoginMode && (
-                                                <input
-                                                    type="text"
-                                                    placeholder="Full Name"
-                                                    value={authName}
-                                                    onChange={(e) => setAuthName(e.target.value)}
-                                                    className="w-full p-4 bg-gray-50 rounded-xl outline-none border border-transparent focus:border-[#2D3E6E] transition-all"
-                                                />
-                                            )}
-                                            <input
-                                                type="email"
-                                                placeholder="Email Address"
-                                                value={authEmail}
-                                                onChange={(e) => setAuthEmail(e.target.value)}
-                                                className="w-full p-4 bg-gray-50 rounded-xl outline-none border border-transparent focus:border-[#2D3E6E] transition-all"
-                                            />
-                                            <input
-                                                type="password"
-                                                placeholder="Password"
-                                                value={authPassword}
-                                                onChange={(e) => setAuthPassword(e.target.value)}
-                                                className="w-full p-4 bg-gray-50 rounded-xl outline-none border border-transparent focus:border-[#2D3E6E] transition-all"
-                                            />
-                                            <button
-                                                onClick={handleAuthSubmit}
-                                                disabled={isSubmittingAuth}
-                                                className="w-full py-4 bg-[#2D3E6E] text-white rounded-xl font-bold uppercase tracking-widest hover:bg-[#1A264D] transition-all shadow-lg disabled:opacity-60"
-                                            >
-                                                {isSubmittingAuth ? 'Please wait...' : isLoginMode ? 'Sign In' : 'Register'}
-                                            </button>
-                                            <button
-                                                onClick={() => setIsLoginMode(!isLoginMode)}
-                                                className="w-full text-sm text-[#2D3E6E] hover:underline"
-                                            >
-                                                {isLoginMode ? 'New user? Create account' : 'Already have an account? Sign in'}
-                                            </button>
-                                        </div>
-                                    </>
-                                )}
-                                <button onClick={() => setIsAccountOpen(false)} className="mt-6 text-sm text-gray-400 hover:text-gray-600">Close</button>
-                            </div>
-                        </motion.div>
-                    </>
-                )}
-            </AnimatePresence>
-
-            {/* Admin Panel */}
-            <AnimatePresence>
-                {isAdminPanelOpen && (
-                    <>
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="fixed inset-0 bg-black/50 backdrop-blur-md z-[90]"
-                            onClick={() => setIsAdminPanelOpen(false)}
-                        />
-                        <motion.div
-                            initial={{ y: '100%' }}
-                            animate={{ y: 0 }}
-                            exit={{ y: '100%' }}
-                            className="fixed inset-0 bg-white z-[100] overflow-y-auto"
-                        >
-                            <div className="max-w-4xl mx-auto px-6 py-10">
-                                <div className="flex items-center justify-between mb-8">
-                                    <div>
-                                        <h2 className="font-serif text-3xl text-[#2D3E6E]">Admin Order Upload</h2>
-                                        <p className="text-sm text-gray-500 mt-1">Create a new order manually.</p>
-                                    </div>
-                                    <button
-                                        onClick={() => setIsAdminPanelOpen(false)}
-                                        className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-                                    >
+                                <div className="max-w-3xl mx-auto flex items-center gap-4">
+                                    <Search className="text-gray-400" size={24} />
+                                    <input
+                                        autoFocus
+                                        type="text"
+                                        placeholder="Search for flowers, keychains..."
+                                        className="flex-1 text-xl outline-none font-serif"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                    />
+                                    <button onClick={() => setIsSearchOpen(false)} className="p-2 hover:bg-gray-100 rounded-full">
                                         <X size={24} />
                                     </button>
                                 </div>
 
-                                <div className="bg-[#F9FAFB] rounded-3xl p-8 shadow-sm border border-[#E5E7EB]">
-                                    <div className="mb-6">
-                                        <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Customer Email (Optional)</label>
-                                        <input
-                                            type="email"
-                                            value={adminCustomerEmail}
-                                            onChange={(e) => setAdminCustomerEmail(e.target.value)}
-                                            placeholder="customer@example.com"
-                                            className="w-full p-4 bg-white rounded-xl border border-gray-200 outline-none focus:border-[#2D3E6E] transition-all"
-                                        />
-                                    </div>
-
-                                    <div className="space-y-6">
-                                        {adminOrderItems.map((item, index) => (
-                                            <div key={item.id} className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <h3 className="text-sm font-semibold text-[#2D3E6E] uppercase tracking-widest">Item {index + 1}</h3>
-                                                    {adminOrderItems.length > 1 && (
-                                                        <button
-                                                            onClick={() => removeAdminItem(index)}
-                                                            className="text-xs text-red-500 uppercase tracking-widest hover:opacity-80"
-                                                        >
-                                                            Remove
-                                                        </button>
-                                                    )}
-                                                </div>
-                                                <div className="grid md:grid-cols-2 gap-4">
-                                                    <input
-                                                        type="text"
-                                                        value={item.name}
-                                                        onChange={(e) => updateAdminItem(index, "name", e.target.value)}
-                                                        placeholder="Product name"
-                                                        className="w-full p-4 bg-gray-50 rounded-xl border border-transparent focus:border-[#2D3E6E] outline-none transition-all"
-                                                    />
-                                                    <input
-                                                        type="text"
-                                                        value={item.collectionTitle}
-                                                        onChange={(e) => updateAdminItem(index, "collectionTitle", e.target.value)}
-                                                        placeholder="Collection title"
-                                                        className="w-full p-4 bg-gray-50 rounded-xl border border-transparent focus:border-[#2D3E6E] outline-none transition-all"
-                                                    />
-                                                    <input
-                                                        type="number"
-                                                        min="1"
-                                                        value={item.quantity}
-                                                        onChange={(e) => updateAdminItem(index, "quantity", e.target.value)}
-                                                        placeholder="Quantity"
-                                                        className="w-full p-4 bg-gray-50 rounded-xl border border-transparent focus:border-[#2D3E6E] outline-none transition-all"
-                                                    />
-                                                    <input
-                                                        type="number"
-                                                        min="1"
-                                                        value={item.singlePrice}
-                                                        onChange={(e) => updateAdminItem(index, "singlePrice", e.target.value)}
-                                                        placeholder="Single price"
-                                                        className="w-full p-4 bg-gray-50 rounded-xl border border-transparent focus:border-[#2D3E6E] outline-none transition-all"
-                                                    />
-                                                    <input
-                                                        type="number"
-                                                        min="1"
-                                                        value={item.bouquetPrice}
-                                                        onChange={(e) => updateAdminItem(index, "bouquetPrice", e.target.value)}
-                                                        placeholder="Bouquet price"
-                                                        className="w-full p-4 bg-gray-50 rounded-xl border border-transparent focus:border-[#2D3E6E] outline-none transition-all"
-                                                    />
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                                        <button
-                                            onClick={addAdminItem}
-                                            className="px-6 py-3 rounded-full border border-[#2D3E6E]/30 text-[#2D3E6E] uppercase tracking-widest text-xs font-bold hover:bg-[#2D3E6E]/10 transition-all"
-                                        >
-                                            Add Item
-                                        </button>
-                                        <div className="text-right">
-                                            <p className="text-xs uppercase tracking-widest text-gray-400">Total Amount</p>
-                                            <p className="text-2xl font-serif text-[#2D3E6E]">Rs. {adminOrderTotal}</p>
+                                {searchResults.length > 0 && (
+                                    <div className="max-w-3xl mx-auto mt-8 max-h-[60vh] overflow-y-auto no-scrollbar">
+                                        <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">Search Results ({searchResults.length})</p>
+                                        <div className="grid gap-2">
+                                            {searchResults.map((product, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => {
+                                                        scrollToSection(getProductId(product.name));
+                                                        setIsSearchOpen(false);
+                                                        setSearchQuery('');
+                                                    }}
+                                                    className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors rounded-2xl text-left group"
+                                                >
+                                                    <div className="w-20 h-20 overflow-hidden rounded-xl bg-gray-100">
+                                                        <img
+                                                            src={product.image}
+                                                            alt={product.name}
+                                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                                            onError={(event) => {
+                                                                const fallbackImage = fallbackImageByCollectionId.get(product.collectionId);
+                                                                if (fallbackImage && event.currentTarget.src !== fallbackImage) {
+                                                                    event.currentTarget.src = fallbackImage;
+                                                                }
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <h4 className="font-serif text-lg text-gray-900">{product.name}</h4>
+                                                        <p className="text-sm text-gray-500 uppercase tracking-widest font-bold">{product.collectionTitle}</p>
+                                                        <p className="text-[var(--color-floral-accent)] font-bold mt-1">₹{product.singlePrice}</p>
+                                                    </div>
+                                                    <ArrowRight size={20} className="text-gray-300 group-hover:text-[var(--color-floral-accent)] transition-colors" />
+                                                </button>
+                                            ))}
                                         </div>
                                     </div>
+                                )}
 
-                                    <button
-                                        onClick={handleAdminCreateOrder}
-                                        disabled={isSubmittingAdminOrder}
-                                        className="mt-8 w-full py-4 bg-[#2D3E6E] text-white rounded-full uppercase tracking-widest text-xs font-bold hover:bg-[#1A264D] transition-all disabled:opacity-60"
-                                    >
-                                        {isSubmittingAdminOrder ? "Submitting..." : "Create Order"}
-                                    </button>
+                                {searchQuery.trim() !== '' && searchResults.length === 0 && (
+                                    <div className="max-w-3xl mx-auto mt-20 text-center py-12">
+                                        <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                                            <Search size={32} className="text-gray-300" />
+                                        </div>
+                                        <h3 className="font-serif text-2xl mb-2">No results found</h3>
+                                        <p className="text-gray-500">We couldn't find anything matching "{searchQuery}"</p>
+                                    </div>
+                                )}
+                            </motion.div>
+                        </>
+                    )}
+                </AnimatePresence>
+
+                {/* Account Modal */}
+                <AnimatePresence>
+                    {isAccountOpen && (
+                        <>
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="fixed inset-0 bg-black/40 backdrop-blur-md z-[80]"
+                                onClick={() => setIsAccountOpen(false)}
+                            />
+                            <motion.div
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.9, opacity: 0 }}
+                                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white z-[90] p-10 rounded-[2rem] shadow-2xl"
+                            >
+                                <div className="text-center">
+                                    <div className="w-20 h-20 bg-[#2D3E6E]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                                        <User size={40} className="text-[#2D3E6E]" />
+                                    </div>
+                                    <h2 className="font-serif text-3xl mb-4">{authUser ? `Hi, ${authUser.name}` : isLoginMode ? 'Welcome Back' : 'Create Account'}</h2>
+                                    {authUser ? (
+                                        <div className="space-y-4">
+                                            <p className="text-gray-500">{authUser.email} ({authUser.role})</p>
+                                            {authUser.role === "admin" && (
+                                                <button
+                                                    onClick={() => {
+                                                        setIsAccountOpen(false);
+                                                        setIsAdminPanelOpen(true);
+                                                    }}
+                                                    className="w-full py-4 bg-white text-[#2D3E6E] rounded-xl font-bold uppercase tracking-widest border border-[#2D3E6E]/20 hover:bg-[#2D3E6E]/10 transition-all shadow-sm"
+                                                >
+                                                    Open Admin Panel
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={() => {
+                                                    localStorage.removeItem('twisted_bliss_token');
+                                                    localStorage.removeItem('twisted_bliss_name');
+                                                    localStorage.removeItem('twisted_bliss_email');
+                                                    localStorage.removeItem('twisted_bliss_role');
+                                                    setAuthUser(null);
+                                                    setIsAdminPanelOpen(false);
+                                                    setIsAccountOpen(false);
+                                                }}
+                                                className="w-full py-4 bg-[#2D3E6E] text-white rounded-xl font-bold uppercase tracking-widest hover:bg-[#1A264D] transition-all shadow-lg"
+                                            >
+                                                Logout
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <p className="text-gray-500 mb-8">{isLoginMode ? 'Sign in to track your orders and manage your account.' : 'Register to save your profile and checkout faster.'}</p>
+                                            <div className="space-y-4">
+                                                {!isLoginMode && (
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Full Name"
+                                                        value={authName}
+                                                        onChange={(e) => setAuthName(e.target.value)}
+                                                        className="w-full p-4 bg-gray-50 rounded-xl outline-none border border-transparent focus:border-[#2D3E6E] transition-all"
+                                                    />
+                                                )}
+                                                <input
+                                                    type="email"
+                                                    placeholder="Email Address"
+                                                    value={authEmail}
+                                                    onChange={(e) => setAuthEmail(e.target.value)}
+                                                    className="w-full p-4 bg-gray-50 rounded-xl outline-none border border-transparent focus:border-[#2D3E6E] transition-all"
+                                                />
+                                                <input
+                                                    type="password"
+                                                    placeholder="Password"
+                                                    value={authPassword}
+                                                    onChange={(e) => setAuthPassword(e.target.value)}
+                                                    className="w-full p-4 bg-gray-50 rounded-xl outline-none border border-transparent focus:border-[#2D3E6E] transition-all"
+                                                />
+                                                <button
+                                                    onClick={handleAuthSubmit}
+                                                    disabled={isSubmittingAuth}
+                                                    className="w-full py-4 bg-[#2D3E6E] text-white rounded-xl font-bold uppercase tracking-widest hover:bg-[#1A264D] transition-all shadow-lg disabled:opacity-60"
+                                                >
+                                                    {isSubmittingAuth ? 'Please wait...' : isLoginMode ? 'Sign In' : 'Register'}
+                                                </button>
+                                                <button
+                                                    onClick={() => setIsLoginMode(!isLoginMode)}
+                                                    className="w-full text-sm text-[#2D3E6E] hover:underline"
+                                                >
+                                                    {isLoginMode ? 'New user? Create account' : 'Already have an account? Sign in'}
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                    <button onClick={() => setIsAccountOpen(false)} className="mt-6 text-sm text-gray-400 hover:text-gray-600">Close</button>
                                 </div>
-                            </div>
-                        </motion.div>
-                    </>
-                )}
-            </AnimatePresence>
+                            </motion.div>
+                        </>
+                    )}
+                </AnimatePresence>
 
-            <div className="h-20"></div> {/* Spacer for bottom nav */}
-        </div>
+                {/* Admin Panel */}
+                <AnimatePresence>
+                    {isAdminPanelOpen && (
+                        <>
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="fixed inset-0 bg-black/50 backdrop-blur-md z-[90]"
+                                onClick={() => setIsAdminPanelOpen(false)}
+                            />
+                            <motion.div
+                                initial={{ y: '100%' }}
+                                animate={{ y: 0 }}
+                                exit={{ y: '100%' }}
+                                className="fixed inset-0 bg-white z-[100] overflow-y-auto"
+                            >
+                                <div className="max-w-4xl mx-auto px-6 py-10">
+                                    <div className="flex items-center justify-between mb-8">
+                                        <div>
+                                            <h2 className="font-serif text-3xl text-[#2D3E6E]">Admin Order Upload</h2>
+                                            <p className="text-sm text-gray-500 mt-1">Create a new order manually.</p>
+                                        </div>
+                                        <button
+                                            onClick={() => setIsAdminPanelOpen(false)}
+                                            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                                        >
+                                            <X size={24} />
+                                        </button>
+                                    </div>
+
+                                    <div className="bg-[#F9FAFB] rounded-3xl p-8 shadow-sm border border-[#E5E7EB]">
+                                        <div className="mb-6">
+                                            <label className="block text-xs uppercase tracking-widest text-gray-500 mb-2">Customer Email (Optional)</label>
+                                            <input
+                                                type="email"
+                                                value={adminCustomerEmail}
+                                                onChange={(e) => setAdminCustomerEmail(e.target.value)}
+                                                placeholder="customer@example.com"
+                                                className="w-full p-4 bg-white rounded-xl border border-gray-200 outline-none focus:border-[#2D3E6E] transition-all"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-6">
+                                            {adminOrderItems.map((item, index) => (
+                                                <div key={item.id} className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+                                                    <div className="flex items-center justify-between mb-4">
+                                                        <h3 className="text-sm font-semibold text-[#2D3E6E] uppercase tracking-widest">Item {index + 1}</h3>
+                                                        {adminOrderItems.length > 1 && (
+                                                            <button
+                                                                onClick={() => removeAdminItem(index)}
+                                                                className="text-xs text-red-500 uppercase tracking-widest hover:opacity-80"
+                                                            >
+                                                                Remove
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                    <div className="grid md:grid-cols-2 gap-4">
+                                                        <input
+                                                            type="text"
+                                                            value={item.name}
+                                                            onChange={(e) => updateAdminItem(index, "name", e.target.value)}
+                                                            placeholder="Product name"
+                                                            className="w-full p-4 bg-gray-50 rounded-xl border border-transparent focus:border-[#2D3E6E] outline-none transition-all"
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            value={item.collectionTitle}
+                                                            onChange={(e) => updateAdminItem(index, "collectionTitle", e.target.value)}
+                                                            placeholder="Collection title"
+                                                            className="w-full p-4 bg-gray-50 rounded-xl border border-transparent focus:border-[#2D3E6E] outline-none transition-all"
+                                                        />
+                                                        <input
+                                                            type="number"
+                                                            min="1"
+                                                            value={item.quantity}
+                                                            onChange={(e) => updateAdminItem(index, "quantity", e.target.value)}
+                                                            placeholder="Quantity"
+                                                            className="w-full p-4 bg-gray-50 rounded-xl border border-transparent focus:border-[#2D3E6E] outline-none transition-all"
+                                                        />
+                                                        <input
+                                                            type="number"
+                                                            min="1"
+                                                            value={item.singlePrice}
+                                                            onChange={(e) => updateAdminItem(index, "singlePrice", e.target.value)}
+                                                            placeholder="Single price"
+                                                            className="w-full p-4 bg-gray-50 rounded-xl border border-transparent focus:border-[#2D3E6E] outline-none transition-all"
+                                                        />
+                                                        <input
+                                                            type="number"
+                                                            min="1"
+                                                            value={item.bouquetPrice}
+                                                            onChange={(e) => updateAdminItem(index, "bouquetPrice", e.target.value)}
+                                                            placeholder="Bouquet price"
+                                                            className="w-full p-4 bg-gray-50 rounded-xl border border-transparent focus:border-[#2D3E6E] outline-none transition-all"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                            <button
+                                                onClick={addAdminItem}
+                                                className="px-6 py-3 rounded-full border border-[#2D3E6E]/30 text-[#2D3E6E] uppercase tracking-widest text-xs font-bold hover:bg-[#2D3E6E]/10 transition-all"
+                                            >
+                                                Add Item
+                                            </button>
+                                            <div className="text-right">
+                                                <p className="text-xs uppercase tracking-widest text-gray-400">Total Amount</p>
+                                                <p className="text-2xl font-serif text-[#2D3E6E]">Rs. {adminOrderTotal}</p>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            onClick={handleAdminCreateOrder}
+                                            disabled={isSubmittingAdminOrder}
+                                            className="mt-8 w-full py-4 bg-[#2D3E6E] text-white rounded-full uppercase tracking-widest text-xs font-bold hover:bg-[#1A264D] transition-all disabled:opacity-60"
+                                        >
+                                            {isSubmittingAdminOrder ? "Submitting..." : "Create Order"}
+                                        </button>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </>
+                    )}
+                </AnimatePresence>
+
+                <div className="h-20"></div> {/* Spacer for bottom nav */}
+            </div>
+        </>
     );
 }
